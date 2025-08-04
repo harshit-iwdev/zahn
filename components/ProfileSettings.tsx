@@ -334,6 +334,22 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-xl">
+            <TabsTrigger 
+              value="profile" 
+              className="flex items-center space-x-2 py-3 px-6 rounded-lg data-[state=active]:bg-[#433CE7] data-[state=active]:text-white transition-all"
+            >
+              <User className="w-5 h-5" />
+              <span className="font-medium">My Profile</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings" 
+              className="flex items-center space-x-2 py-3 px-6 rounded-lg data-[state=active]:bg-[#433CE7] data-[state=active]:text-white transition-all"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="font-medium">Settings</span>
+            </TabsTrigger>
+          </TabsList> */}
           <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-xl">
             <TabsTrigger 
               value="profile" 

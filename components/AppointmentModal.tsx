@@ -45,14 +45,14 @@ export function AppointmentModal({ isOpen, onClose, appointment }: AppointmentMo
           <DialogTitle className="text-xl font-semibold text-gray-900">
             Appointment Details
           </DialogTitle>
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
             className="h-8 w-8 p-0 hover:bg-gray-100"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </Button> */}
         </DialogHeader>
 
         <div className="space-y-6 py-4">

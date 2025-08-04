@@ -269,7 +269,7 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
               <h3 className="text-lg font-medium text-foreground mb-4">Weekly Schedule</h3>
               <div className="border border-border rounded-xl overflow-hidden">
                 {/* Header */}
-                <div className="grid grid-cols-13 bg-[#E5E3FB] border-b border-border">
+                <div className="grid grid-cols-8 bg-[#E5E3FB] border-b border-border">
                   <div className="p-3 font-medium text-[#433CE7]">Time</div>
                   {DAYS.map(day => (
                     <div key={day} className="p-3 font-medium text-[#433CE7] text-center text-sm">
@@ -280,8 +280,8 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
                 
                 {/* Time Slots */}
                 {HOURS.map(hour => (
-                  <div key={hour} className="grid grid-cols-13 border-b border-border last:border-b-0">
-                    <div className="p-3 text-sm font-medium text-muted-foreground bg-gray-50">
+                  <div key={hour} className="grid grid-cols-8 border-b border-border last:border-b-0">
+                    <div className="p-3 text-sm font-medium text-muted-foreground bg-gray-50 border-r border-border">
                       {formatTime(hour)}
                     </div>
                     {DAYS.map(day => {

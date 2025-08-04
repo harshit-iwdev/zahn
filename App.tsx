@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Routes, Route, Navigate, Router, useNavigate } from "react-router-dom";
 import { Login } from "./components/Login";
 import { Registration } from "./components/Registration";
 import { ClinicOnboarding } from "./components/ClinicOnboarding";
@@ -8,14 +9,7 @@ import { SubscriptionPlanSelection } from "./components/SubscriptionPlanSelectio
 import { TermsAndConditions } from "./components/TermsAndConditions";
 import { ProfileFinalization } from "./components/ProfileFinalization";
 import { ProfileSubmissionConfirmation } from "./components/ProfileSubmissionConfirmation";
-import { PlanUpgrade } from "./components/PlanUpgrade";
-import { Sidebar } from "./components/Sidebar";
-import { Dashboard } from "./components/Dashboard";
-import { CalendarAvailability } from "./components/CalendarAvailability";
-import { MyBookings } from "./components/MyBookings";
-import { Notifications } from "./components/Notifications";
-import { EarningsSummary } from "./components/EarningsSummary";
-import { ProfileSettings } from "./components/ProfileSettings";
+import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,7 +22,7 @@ export default function App() {
   const [showProfileFinalization, setShowProfileFinalization] = useState(false);
   const [showProfileConfirmation, setShowProfileConfirmation] = useState(false);
   const [showPlanUpgrade, setShowPlanUpgrade] = useState(false);
-  const [activeItem, setActiveItem] = useState('dashboard');
+  const navigate = useNavigate();
 
   // Store user profile data during onboarding
   const [profileData, setProfileData] = useState({
@@ -79,14 +73,11 @@ export default function App() {
     setShowProfileFinalization(false);
     setShowProfileConfirmation(false);
     setShowPlanUpgrade(false);
+    navigate('/dashboard');
   };
 
   const handleShowPlanUpgrade = () => {
     setShowPlanUpgrade(true);
-  };
-
-  const handleNavigateToCalendar = () => {
-    setActiveItem('calendar');
   };
 
   const handlePlanUpgradeComplete = () => {
@@ -99,11 +90,11 @@ export default function App() {
         monthlyPrice: 599,
         features: [
           'Unlimited new-patient bookings',
-          'Priority in search results',
-          'Enhanced profile (photos, videos, reviews)',
+          'Priority search ranking',
+          'Enhanced profile with photos & videos',
           'Direct patient messaging',
-          'Advanced analytics & marketing insights',
-          'Recall & retention tools'
+          'Advanced analytics & insights',
+          'Premium customer support'
         ]
       }
     }));
@@ -115,110 +106,122 @@ export default function App() {
   };
 
   const handleRegister = (userData?: any) => {
-    // Store registration data and move to clinic onboarding
     if (userData) {
       setProfileData(prev => ({ ...prev, ...userData }));
     }
     setShowRegistration(false);
     setShowClinicOnboarding(true);
+    navigate('/clinic-onboarding');
   };
 
   const handleClinicOnboardingComplete = (clinicData?: any) => {
-    // Store clinic data and move to bank account onboarding
     if (clinicData) {
       setProfileData(prev => ({ ...prev, ...clinicData }));
     }
     setShowClinicOnboarding(false);
     setShowBankAccountOnboarding(true);
+    navigate('/bank-account-onboarding');
   };
 
   const handleBankAccountOnboardingComplete = (bankData?: any) => {
-    // Store bank account data and move to availability setup
     if (bankData) {
-      setProfileData(prev => ({ ...prev, bankAccount: bankData }));
+      setProfileData(prev => ({ 
+        ...prev, 
+        bankAccount: { ...prev.bankAccount, ...bankData }
+      }));
     }
     setShowBankAccountOnboarding(false);
     setShowAvailabilitySetup(true);
+    navigate('/availability-setup');
   };
 
   const handleAvailabilitySetupComplete = (availabilityData?: any) => {
-    // Store availability data and move to subscription plan selection
     if (availabilityData) {
-      setProfileData(prev => ({ ...prev, availability: availabilityData }));
+      setProfileData(prev => ({ 
+        ...prev, 
+        availability: { ...prev.availability, ...availabilityData }
+      }));
     }
     setShowAvailabilitySetup(false);
     setShowSubscriptionPlanSelection(true);
+    navigate('/subscription-plan-selection');
   };
 
   const handleSubscriptionPlanSelectionComplete = (subscriptionData?: any) => {
-    // Store subscription data and move to terms and conditions
     if (subscriptionData) {
-      setProfileData(prev => ({ ...prev, subscription: subscriptionData }));
+      setProfileData(prev => ({ 
+        ...prev, 
+        subscription: { ...prev.subscription, ...subscriptionData }
+      }));
     }
     setShowSubscriptionPlanSelection(false);
     setShowTermsAndConditions(true);
+    navigate('/terms-and-conditions');
   };
 
   const handleTermsAndConditionsComplete = (agreementData?: any) => {
-    // Store agreement data and move to profile finalization
     if (agreementData) {
-      setProfileData(prev => ({ ...prev, agreements: agreementData }));
+      setProfileData(prev => ({ 
+        ...prev, 
+        agreements: { ...prev.agreements, ...agreementData }
+      }));
     }
     setShowTermsAndConditions(false);
     setShowProfileFinalization(true);
   };
 
   const handleProfileFinalizationComplete = () => {
-    // After profile submission, show confirmation screen
     setShowProfileFinalization(false);
     setShowProfileConfirmation(true);
+    navigate('/profile-submission-confirmation');
   };
 
   const handleProfileConfirmationBackToHome = () => {
-    // Complete authentication and go to dashboard
-    setIsAuthenticated(true);
     setShowProfileConfirmation(false);
+    setIsAuthenticated(true);
+    navigate('/dashboard');
   };
 
   const handleProfileConfirmationLogOut = () => {
-    // Log out and return to login screen
-    handleLogout();
+    setShowProfileConfirmation(false);
+    setIsAuthenticated(false);
+    navigate('/login');
   };
 
   const handleClinicOnboardingBack = () => {
-    // Go back to registration from clinic onboarding
     setShowClinicOnboarding(false);
     setShowRegistration(true);
+    navigate('/register');
   };
 
   const handleBankAccountOnboardingBack = () => {
-    // Go back to clinic onboarding from bank account onboarding
     setShowBankAccountOnboarding(false);
     setShowClinicOnboarding(true);
+    navigate('/clinic-onboarding');
   };
 
   const handleAvailabilitySetupBack = () => {
-    // Go back to bank account onboarding from availability setup
     setShowAvailabilitySetup(false);
     setShowBankAccountOnboarding(true);
+    navigate('/bank-account-onboarding');
   };
 
   const handleSubscriptionPlanSelectionBack = () => {
-    // Go back to availability setup from subscription plan selection
     setShowSubscriptionPlanSelection(false);
     setShowAvailabilitySetup(true);
+    navigate('/availability-setup');
   };
 
   const handleTermsAndConditionsBack = () => {
-    // Go back to subscription plan selection from terms and conditions
     setShowTermsAndConditions(false);
     setShowSubscriptionPlanSelection(true);
+    navigate('/subscription-plan-selection');
   };
 
   const handleProfileFinalizationBack = () => {
-    // Go back to terms and conditions from profile finalization
     setShowProfileFinalization(false);
     setShowTermsAndConditions(true);
+    navigate('/terms-and-conditions');
   };
 
   const handleLogout = () => {
@@ -232,109 +235,18 @@ export default function App() {
     setShowProfileFinalization(false);
     setShowProfileConfirmation(false);
     setShowPlanUpgrade(false);
-    setActiveItem('dashboard');
-    setProfileData({
-      fullName: '',
-      email: '',
-      clinicName: '',
-      clinicAddress: '',
-      specialties: [],
-      bankAccount: {
-        accountHolderName: '',
-        routingNumber: '',
-        accountNumber: '',
-        accountType: '',
-        bankName: ''
-      },
-      availability: {
-        timezone: '',
-        schedule: {},
-        totalHours: 0
-      },
-      subscription: {
-        tier: 'tier1',
-        planName: 'Tier 1',
-        monthlyPrice: 199,
-        features: []
-      },
-      agreements: {
-        agreedToAllTerms: false,
-        agreedAt: '',
-        ipAddress: '',
-        userAgent: ''
-      }
-    });
+    navigate('/login');
   };
 
   const handleShowRegistration = () => {
     setShowRegistration(true);
+    navigate('/register');
   };
 
   const handleShowLogin = () => {
     setShowRegistration(false);
-    setShowClinicOnboarding(false);
-    setShowBankAccountOnboarding(false);
-    setShowAvailabilitySetup(false);
-    setShowSubscriptionPlanSelection(false);
-    setShowTermsAndConditions(false);
-    setShowProfileFinalization(false);
-    setShowProfileConfirmation(false);
-    setShowPlanUpgrade(false);
+    navigate('/login');
   };
-
-  const renderContent = () => {
-    switch (activeItem) {
-      case 'dashboard':
-        return (
-          <Dashboard 
-            onShowPlanUpgrade={handleShowPlanUpgrade} 
-            onNavigateToCalendar={handleNavigateToCalendar}
-            currentSubscription={profileData.subscription} 
-          />
-        );
-      case 'calendar':
-        return <CalendarAvailability />;
-      case 'bookings':
-        return <MyBookings />;
-      case 'notifications':
-        return <Notifications />;
-      case 'earnings':
-        return <EarningsSummary />;
-      case 'profile':
-        return (
-          <ProfileSettings 
-            onShowPlanUpgrade={handleShowPlanUpgrade}
-            onLogout={handleLogout}
-            currentSubscription={profileData.subscription}
-          />
-        );
-      default:
-        return (
-          <Dashboard 
-            onShowPlanUpgrade={handleShowPlanUpgrade} 
-            onNavigateToCalendar={handleNavigateToCalendar}
-            currentSubscription={profileData.subscription} 
-          />
-        );
-    }
-  };
-
-  // Show plan upgrade screen
-  if (isAuthenticated && showPlanUpgrade) {
-    return (
-      <div className="h-screen flex bg-[#F9FAFB]">
-        <Sidebar 
-          activeItem={activeItem} 
-          onItemSelect={setActiveItem}
-        />
-        <PlanUpgrade 
-          onUpgrade={handlePlanUpgradeComplete}
-          onBack={handlePlanUpgradeBack}
-          currentPlan={profileData.subscription}
-        />
-      </div>
-    );
-  }
 
   // Show profile submission confirmation
   if (!isAuthenticated && showProfileConfirmation) {
@@ -429,14 +341,15 @@ export default function App() {
     );
   }
 
-  // Show dashboard if authenticated
+  // Show authenticated layout with routing
   return (
-    <div className="h-screen flex bg-[#F9FAFB]">
-      <Sidebar 
-        activeItem={activeItem} 
-        onItemSelect={setActiveItem}
-      />
-      {renderContent()}
-    </div>
+    <AuthenticatedLayout
+      onLogout={handleLogout}
+      onShowPlanUpgrade={handleShowPlanUpgrade}
+      currentSubscription={profileData.subscription}
+      showPlanUpgrade={showPlanUpgrade}
+      onPlanUpgradeComplete={handlePlanUpgradeComplete}
+      onPlanUpgradeBack={handlePlanUpgradeBack}
+    />
   );
 }

@@ -1,3 +1,4 @@
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Calendar, 
   BookOpen, 
@@ -13,15 +14,26 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
-  { id: 'bookings', label: 'My Bookings', icon: BookOpen },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'earnings', label: 'Earnings Summary', icon: DollarSign },
-  { id: 'profile', label: 'Profile & Settings', icon: User },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/calendar' },
+  { id: 'bookings', label: 'My Bookings', icon: BookOpen, path: '/bookings' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
+  { id: 'earnings', label: 'Earnings Summary', icon: DollarSign, path: '/earnings' },
+  { id: 'profile', label: 'Profile & Settings', icon: User, path: '/profile' },
 ];
 
 export function Sidebar({ activeItem, onItemSelect }: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleItemClick = (item: typeof menuItems[0]) => {
+    onItemSelect(item.id);
+    navigate(item.path);
+  };
+
+  // Determine active item based on current location
+  const currentActiveItem = menuItems.find(item => item.path === location.pathname)?.id || 'dashboard';
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-full flex flex-col">
       <div className="p-6 border-b border-gray-100">
@@ -32,12 +44,12 @@ export function Sidebar({ activeItem, onItemSelect }: SidebarProps) {
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.id;
+            const isActive = currentActiveItem === item.id;
             
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onItemSelect(item.id)}
+                  onClick={() => handleItemClick(item)}
                   className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${
                     isActive
                       ? 'bg-[#6246EA] text-white font-medium shadow-sm'

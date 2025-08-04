@@ -6,6 +6,7 @@ import { Label } from "./ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useNavigate } from "react-router-dom";
 
 interface LoginProps {
   onLogin: () => void;
@@ -17,6 +18,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     email: '',
     password: ''
   });
+  const navigate = useNavigate();
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -85,6 +87,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
 
   const handleSignup = () => {
     onShowRegistration();
+    navigate('/register');
   };
 
   return (

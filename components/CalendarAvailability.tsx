@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
-import { WeeklyAvailability } from "./WeeklyAvailability";
+// import { WeeklyAvailability } from "./WeeklyAvailability";
 import { BlockedDates } from "./BlockedDates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { CalendarDays, Clock } from "lucide-react";
+import { WeeklyAvailability } from "./WeeklyAvailability";
 
 export function CalendarAvailability() {
   const [isGoogleSyncEnabled, setIsGoogleSyncEnabled] = useState(true);

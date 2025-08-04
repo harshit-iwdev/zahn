@@ -82,14 +82,14 @@ export function AppointmentDetails({ isOpen, onClose, appointment }: Appointment
             <DialogTitle className="text-xl font-medium text-foreground">
               Appointment Details
             </DialogTitle>
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
               className="h-6 w-6 p-0 hover:bg-muted rounded-full"
             >
               <X className="w-4 h-4" />
-            </Button>
+            </Button> */}
           </div>
         </DialogHeader>
 
