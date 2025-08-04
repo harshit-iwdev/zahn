@@ -154,13 +154,13 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
       const availabilityData = {
         timezone,
         calendarSync,
-        schedule: {},
+        schedule: {} as Record<string, number[]>,
         totalHours: getTotalHours()
       };
 
       // Group slots by day
       DAYS.forEach(day => {
-        availabilityData.schedule[day] = HOURS.filter(hour => 
+        availabilityData.schedule[day] = HOURS.filter(hour =>
           selectedSlots.has(getSlotKey(day, hour))
         );
       });
