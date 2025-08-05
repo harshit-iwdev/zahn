@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 
 interface RegistrationProps {
-  onRegister: () => void;
+  onRegister: (formData: {
+    fullName: string;
+    email: string;
+    phone: string;
+    password: string;
+    confirmPassword: string;
+  }) => void;
   onShowLogin: () => void;
 }
 
@@ -86,7 +92,7 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
       
       // Mock registration success
       console.log('Registration data:', formData);
-      onRegister();
+      onRegister(formData);
     } catch (err) {
       setError('Registration failed. Please try again.');
     } finally {

@@ -10,6 +10,9 @@ import { TermsAndConditions } from "./components/TermsAndConditions";
 import { ProfileFinalization } from "./components/ProfileFinalization";
 import { ProfileSubmissionConfirmation } from "./components/ProfileSubmissionConfirmation";
 import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
+import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData, setUserData } from "./reduxSlice/dashboardSlice";
+import { useAppDispatch } from "./redux/hooks";
+
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,6 +26,7 @@ export default function App() {
   const [showProfileConfirmation, setShowProfileConfirmation] = useState(false);
   const [showPlanUpgrade, setShowPlanUpgrade] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   // Store user profile data during onboarding
   const [profileData, setProfileData] = useState({
@@ -106,8 +110,10 @@ export default function App() {
   };
 
   const handleRegister = (userData?: any) => {
+    console.log('userData', userData);
     if (userData) {
       setProfileData(prev => ({ ...prev, ...userData }));
+      dispatch(setUserData(userData));  // Dispatch the user data to the Redux store
     }
     setShowRegistration(false);
     setShowClinicOnboarding(true);
@@ -117,6 +123,8 @@ export default function App() {
   const handleClinicOnboardingComplete = (clinicData?: any) => {
     if (clinicData) {
       setProfileData(prev => ({ ...prev, ...clinicData }));
+      dispatch(setClinicData(clinicData));  // Dispatch the clinic data to the Redux store
+      // API call to save dentist clinic details
     }
     setShowClinicOnboarding(false);
     setShowBankAccountOnboarding(true);
@@ -129,6 +137,8 @@ export default function App() {
         ...prev, 
         bankAccount: { ...prev.bankAccount, ...bankData }
       }));
+      dispatch(setBankData(bankData));  // Dispatch the bank data to the Redux store
+      // API call to save dentist bank account details
     }
     setShowBankAccountOnboarding(false);
     setShowAvailabilitySetup(true);
@@ -141,6 +151,8 @@ export default function App() {
         ...prev, 
         availability: { ...prev.availability, ...availabilityData }
       }));
+      dispatch(setAvailabilityData(availabilityData));  // Dispatch the availability data to the Redux store
+      // API call to save dentist availability details
     }
     setShowAvailabilitySetup(false);
     setShowSubscriptionPlanSelection(true);
@@ -153,6 +165,8 @@ export default function App() {
         ...prev, 
         subscription: { ...prev.subscription, ...subscriptionData }
       }));
+      dispatch(setSubscriptionData(subscriptionData));  // Dispatch the subscription data to the Redux store
+      // API call to save dentist subscription details
     }
     setShowSubscriptionPlanSelection(false);
     setShowTermsAndConditions(true);
@@ -165,6 +179,8 @@ export default function App() {
         ...prev, 
         agreements: { ...prev.agreements, ...agreementData }
       }));
+      dispatch(setAgreementData(agreementData));  // Dispatch the agreement data to the Redux store
+      // API call to save terms and conditions agreement
     }
     setShowTermsAndConditions(false);
     setShowProfileFinalization(true);
@@ -173,18 +189,30 @@ export default function App() {
   const handleProfileFinalizationComplete = () => {
     setShowProfileFinalization(false);
     setShowProfileConfirmation(true);
+    // API call to save profile finalization
     navigate('/profile-submission-confirmation');
   };
 
   const handleProfileConfirmationBackToHome = () => {
     setShowProfileConfirmation(false);
     setIsAuthenticated(true);
+    // API call to save profile submission confirmation
     navigate('/dashboard');
   };
 
   const handleProfileConfirmationLogOut = () => {
     setShowProfileConfirmation(false);
     setIsAuthenticated(false);
+
+    // Clear all data from the Redux store
+    dispatch(setUserData({}));
+    dispatch(setClinicData({}));
+    dispatch(setBankData({}));
+    dispatch(setAvailabilityData({}));
+    dispatch(setSubscriptionData({}));
+    dispatch(setAgreementData({}));
+
+    // API call to logout user
     navigate('/login');
   };
 
@@ -235,6 +263,7 @@ export default function App() {
     setShowProfileFinalization(false);
     setShowProfileConfirmation(false);
     setShowPlanUpgrade(false);
+    // API call to logout user
     navigate('/login');
   };
 
@@ -325,7 +354,7 @@ export default function App() {
   if (!isAuthenticated && showRegistration) {
     return (
       <Registration 
-        onRegister={handleRegister} 
+        onRegister={(data: any) => handleRegister(data)} 
         onShowLogin={handleShowLogin}
       />
     );
