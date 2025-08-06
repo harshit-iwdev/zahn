@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../routes";
 
 interface LoginProps {
   onLogin: () => void;
@@ -19,7 +20,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     password: ''
   });
   const navigate = useNavigate();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,20 +42,20 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
 
   // Fixed isFormValid function - only uses pure validation functions
   const isFormValid = () => {
-    return formData.email && 
-           formData.password && 
-           isValidEmail(formData.email) && 
-           isValidPassword(formData.password);
+    return formData.email &&
+      formData.password &&
+      isValidEmail(formData.email) &&
+      isValidPassword(formData.password);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isValidEmail(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     if (!isValidPassword(formData.password)) {
       setError('Password must be at least 6 characters');
       return;
@@ -66,7 +67,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Mock authentication - in real app, this would be an API call
       if (formData.email === 'demo@zaan.com' && formData.password === 'password123') {
         onLogin();
@@ -87,7 +88,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
 
   const handleSignup = () => {
     onShowRegistration();
-    navigate('/register');
+    navigate(ROUTES.REGISTER);
   };
 
   return (
@@ -98,17 +99,17 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
           {/* Logo Section */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-[#433CE7] rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg">
-              <svg 
-                className="w-10 h-10 text-white" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                 />
               </svg>
             </div>
@@ -131,7 +132,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
           <div className="text-center max-w-md">
             <h2 className="text-2xl font-bold text-[#433CE7] mb-4">Welcome Back!</h2>
             <p className="text-gray-600 text-lg leading-relaxed">
-              Access your comprehensive dental practice management system. 
+              Access your comprehensive dental practice management system.
               Manage appointments, patient records, and grow your practice with ease.
             </p>
           </div>
@@ -144,17 +145,17 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="w-16 h-16 bg-[#433CE7] rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
-              <svg 
-                className="w-8 h-8 text-white" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                 />
               </svg>
             </div>
@@ -280,7 +281,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
           {/* Security Note */}
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
-              Your data is protected with industry-standard encryption and security measures. 
+              Your data is protected with industry-standard encryption and security measures.
               This system is designed to comply with HIPAA requirements for healthcare data protection.
             </p>
           </div>

@@ -25,7 +25,7 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
     password: '',
     confirmPassword: ''
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,10 +43,10 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
 
   const isFormValid = () => {
     return formData.fullName.trim() &&
-           isValidEmail(formData.email) &&
-           formData.phone.trim() &&
-           isValidPassword(formData.password) &&
-           formData.confirmPassword === formData.password;
+      isValidEmail(formData.email) &&
+      formData.phone.trim() &&
+      isValidPassword(formData.password) &&
+      formData.confirmPassword === formData.password;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -56,28 +56,28 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.fullName.trim()) {
       setError('Please enter your full name');
       return;
     }
-    
+
     if (!isValidEmail(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     if (!formData.phone.trim()) {
       setError('Please enter your phone number');
       return;
     }
-    
+
     if (!isValidPassword(formData.password)) {
       setError('Password must be at least 8 characters');
       return;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -89,7 +89,7 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Mock registration success
       console.log('Registration data:', formData);
       onRegister(formData);
@@ -112,7 +112,7 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
               Tell us a bit about yourself so we can set up your account.
             </p>
           </CardHeader>
-          
+
           <CardContent className="px-8 pb-12">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Alert */}

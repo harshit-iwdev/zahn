@@ -43,7 +43,7 @@ const MOCK_DATA = {
     {
       id: 2,
       patientName: "Michael Chen",
-      time: "11:30 AM", 
+      time: "11:30 AM",
       status: "pending",
       type: "Root Canal",
       date: "Tuesday, August 12, 2025",
@@ -101,14 +101,14 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
 
   const data = MOCK_DATA;
-  
+
   // Use current subscription data or fallback to mock data
   const subscription = currentSubscription || {
     tier: "tier1",
     planName: "Tier 1",
     monthlyPrice: 199
   };
-  
+
   const isTier1 = subscription.tier === "tier1";
   const technologyFee = billingAmount ? parseFloat(billingAmount) * data.billing.technologyFeeRate : 0;
   const netAmount = billingAmount ? parseFloat(billingAmount) - technologyFee : 0;
@@ -184,7 +184,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          
+
           {/* Calendar Availability Toggle */}
           <Card className="xl:col-span-1">
             <CardHeader className="pb-4">
@@ -207,9 +207,9 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   className="data-[state=checked]:bg-[#433CE7]"
                 />
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Weekly Hours:</span>
@@ -217,8 +217,8 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired 
-                    ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                    ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
                     {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Below Minimum"}
@@ -226,9 +226,9 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={handleManageScheduleClick}
-                variant="outline" 
+                variant="outline"
                 className="w-full border-[#433CE7]/20 text-[#433CE7] hover:bg-[#E5E3FB]/30"
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -275,7 +275,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                     </div>
                   </div>
                 ))}
-                
+
                 {data.todayAppointments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -329,8 +329,8 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   <Crown className="w-5 h-5 text-[#433CE7]" />
                   Subscription
                 </CardTitle>
-                <Badge className={isTier1 
-                  ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]" 
+                <Badge className={isTier1
+                  ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]"
                   : "bg-[#433CE7] text-white hover:bg-[#433CE7]"
                 }>
                   {subscription.planName}
@@ -346,7 +346,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               </div>
 
               <div className="space-y-2">
-                <Button 
+                <Button
                   onClick={handleUpgradeClick}
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
@@ -470,8 +470,8 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired 
-                    ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                    ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
                     {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
@@ -488,9 +488,9 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 </Alert>
               )}
 
-              <Button 
+              <Button
                 onClick={handleManageScheduleClick}
-                variant="outline" 
+                variant="outline"
                 className="w-full border-[#433CE7]/20 text-[#433CE7] hover:bg-[#E5E3FB]/30"
                 size="sm"
               >

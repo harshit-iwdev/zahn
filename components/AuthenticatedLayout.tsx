@@ -1,12 +1,6 @@
-import { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import { Dashboard } from "./Dashboard";
-import { CalendarAvailability } from "./CalendarAvailability";
-import { MyBookings } from "./MyBookings";
-import { Notifications } from "./Notifications";
-import { EarningsSummary } from "./EarningsSummary";
-import { ProfileSettings } from "./ProfileSettings";
 import { PlanUpgrade } from "./PlanUpgrade";
 
 interface AuthenticatedLayoutProps {
@@ -32,20 +26,28 @@ export function AuthenticatedLayout({
   onPlanUpgradeBack
 }: AuthenticatedLayoutProps) {
   const [activeItem, setActiveItem] = useState('dashboard');
+  const location = useLocation();
 
-  const handleNavigateToCalendar = () => {
-    setActiveItem('calendar');
-  };
+  // Update active item based on current location
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/dashboard')) setActiveItem('dashboard');
+    else if (path.includes('/calendar')) setActiveItem('calendar');
+    else if (path.includes('/bookings')) setActiveItem('bookings');
+    else if (path.includes('/notifications')) setActiveItem('notifications');
+    else if (path.includes('/earnings')) setActiveItem('earnings');
+    else if (path.includes('/profile')) setActiveItem('profile');
+  }, [location.pathname]);
 
   // Show plan upgrade screen
   if (showPlanUpgrade) {
     return (
       <div className="h-screen flex bg-[#F9FAFB]">
-        <Sidebar 
-          activeItem={activeItem} 
+        <Sidebar
+          activeItem={activeItem}
           onItemSelect={setActiveItem}
         />
-        <PlanUpgrade 
+        <PlanUpgrade
           onUpgrade={onPlanUpgradeComplete}
           onBack={onPlanUpgradeBack}
           currentPlan={currentSubscription}
@@ -56,47 +58,13 @@ export function AuthenticatedLayout({
 
   return (
     <div className="h-screen flex bg-[#F9FAFB]">
-      <Sidebar 
-        activeItem={activeItem} 
+      <Sidebar
+        activeItem={activeItem}
         onItemSelect={setActiveItem}
       />
-      <Routes>
-        <Route 
-          path="/" 
-          element={
-            <Dashboard 
-              onShowPlanUpgrade={onShowPlanUpgrade} 
-              onNavigateToCalendar={handleNavigateToCalendar}
-              currentSubscription={currentSubscription} 
-            />
-          } 
-        />
-        <Route 
-          path="/dashboard" 
-          element={
-            <Dashboard 
-              onShowPlanUpgrade={onShowPlanUpgrade} 
-              onNavigateToCalendar={handleNavigateToCalendar}
-              currentSubscription={currentSubscription} 
-            />
-          } 
-        />
-        <Route path="/calendar" element={<CalendarAvailability />} />
-        <Route path="/bookings" element={<MyBookings />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/earnings" element={<EarningsSummary />} />
-        <Route 
-          path="/profile" 
-          element={
-            <ProfileSettings 
-              onShowPlanUpgrade={onShowPlanUpgrade}
-              onLogout={onLogout}
-              currentSubscription={currentSubscription}
-            />
-          } 
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <div className="flex-1 overflow-auto">
+        <Outlet />
+      </div>
     </div>
   );
 } 
