@@ -75,12 +75,15 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     try {
       // calling login API
       const response = await loginRef.current.execute({ email: formData.email, password: formData.password });
-      console.log(response);
-      if (response && response.access_token) {
-        dispatch(setLoginUserData(response));
+      if (response && response.data.data.id && response.data.token) {
+        dispatch(setLoginUserData(response.data.data));
         dispatch(setIsAuthenticated(true));
-        localStorage.setItem('access_token', response.access_token);
-        navigate(ROUTES.DASHBOARD);
+        localStorage.setItem('access_token', response.data.token);
+        if (response.data.data.onboardingCompleted) {
+          navigate(ROUTES.DASHBOARD);
+        } else if (!response.data.data.onboardingCompleted) {
+          navigateToOnboarding(response.data.data.onboardingStep);
+        }
       } else {
         setError('Invalid email or password. Please try again.');
       }
@@ -90,6 +93,32 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
       setIsLoading(false);
     }
   };
+
+  const navigateToOnboarding = (onboardingStep: number) => {
+    switch (onboardingStep) {
+      case 1:
+        navigate(ROUTES.ONBOARDING.CLINIC);
+        break;
+      case 2:
+        navigate(ROUTES.ONBOARDING.BANK);
+        break;
+      case 3:
+        navigate(ROUTES.ONBOARDING.AVAILABILITY);
+        break;
+      case 4:
+        navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
+        break;
+      case 5:
+        navigate(ROUTES.ONBOARDING.TERMS);
+        break;
+      case 6:
+        navigate(ROUTES.ONBOARDING.PROFILE);
+        break;
+      default:
+        navigate(ROUTES.LOGIN);
+        break;
+    }
+  }
 
   const handleForgotPassword = () => {
     console.log('Forgot password clicked');
@@ -278,11 +307,12 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
 
               {/* Signup Link */}
               <div className="mt-8 text-center">
+                <span className="text-muted-foreground">Don't have an account?</span>
                 <button
                   onClick={handleSignup}
-                  className="text-muted-foreground hover:text-[#433CE7] transition-colors"
+                  className="text-muted-foreground hover:text-[#433CE7] transition-colors ml-2"
                 >
-                  Don't have an account? <span className="underline">Register here</span>
+                  <span className="underline">Register here</span>
                 </button>
               </div>
             </CardContent>

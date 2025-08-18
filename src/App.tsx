@@ -5,9 +5,10 @@ import { useAppDispatch } from "./redux/hooks";
 import { AppRouter } from "./routes/AppRouter";
 import { RouteComponentProps } from "./routes/RouteComponents";
 import { ROUTES } from "./routes/index";
+import { setIsAuthenticated, setLoginUserData } from "./reduxSlice/userSlice";
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPlanUpgrade, setShowPlanUpgrade] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -188,9 +189,11 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
     setShowPlanUpgrade(false);
-    navigate(ROUTES.HOME);
+    dispatch(setLoginUserData({}));
+    dispatch(setIsAuthenticated(false));
+    localStorage.removeItem('access_token');
+    navigate(ROUTES.LOGIN);
   };
 
   const handleShowRegistration = () => {
@@ -230,9 +233,6 @@ export default function App() {
   };
 
   return (
-    <AppRouter
-      isAuthenticated={isAuthenticated}
-      routeProps={routeProps}
-    />
+    <AppRouter routeProps={routeProps} />
   );
 }

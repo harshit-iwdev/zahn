@@ -101,11 +101,10 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
       const exe = executor("post", url);
       registerRef.current = exe;
       const response = await registerRef.current.execute(formData);
-      console.log(response);
-      if (response && response.id && response.access_token) {
-        dispatch(setLoginUserData(response));
+      if (response && response.data.data.id && response.data.token) {
+        dispatch(setLoginUserData(response.data.data));
         dispatch(setIsAuthenticated(true));
-        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('access_token', response.data.token);
         navigate(ROUTES.ONBOARDING.CLINIC);
       } else {
         setError('Registration failed. Please try again.');
@@ -268,12 +267,13 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
 
               {/* Login Link */}
               <div className="text-center mt-8">
+                <span className="text-muted-foreground">Already have an account? </span>
                 <button
                   type="button"
                   onClick={onShowLogin}
                   className="text-muted-foreground hover:text-[#433CE7] transition-colors"
                 >
-                  Already have an account? <span className="underline">Log in</span>
+                  <span className="underline">Log in</span>
                 </button>
               </div>
             </form>

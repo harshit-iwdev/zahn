@@ -20,22 +20,24 @@ import {
     createProfileSettingsRoute,
     createPlanUpgradeRoute
 } from './RouteComponents';
+import { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
 
 interface AppRouterProps {
-    isAuthenticated: boolean;
     routeProps: RouteComponentProps;
 }
 
-export function AppRouter({ isAuthenticated, routeProps }: AppRouterProps) {
+export function AppRouter({ routeProps }: AppRouterProps) {
     const location = useLocation();
-
+    const isUserAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
+   
     // If user is not authenticated and trying to access a protected route, redirect to login
-    if (!isAuthenticated && isProtectedRoute(location.pathname)) {
+    if (!isUserAuthenticated && isProtectedRoute(location.pathname)) {
         return <Navigate to={ROUTES.LOGIN} replace />;
     }
 
     // If user is authenticated and trying to access a public route, redirect to dashboard
-    if (isAuthenticated && isPublicRoute(location.pathname)) {
+    if (isUserAuthenticated && isPublicRoute(location.pathname)) {
         return <Navigate to={ROUTES.DASHBOARD} replace />;
     }
 
@@ -125,7 +127,7 @@ export function AppRouter({ isAuthenticated, routeProps }: AppRouterProps) {
             {/* Catch all route */}
             <Route
                 path="*"
-                element={<Navigate to={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />}
+                element={<Navigate to={isUserAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />}
             />
         </Routes>
     );

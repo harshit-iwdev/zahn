@@ -1,4 +1,4 @@
-export const AUTH_BASE = "/auth";
+export const AUTH_BASE = "/api/v1/auth";
 export const COMPANY = "/company"
 export const CART = "/cart"
 export const SERVICES = "/subscriptionPlan"
