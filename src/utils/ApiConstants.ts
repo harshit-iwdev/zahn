@@ -1,4 +1,5 @@
 export const AUTH_BASE = "/api/v1/auth";
+export const ONBOARDING_BASE = "/api/v1/onboarding";
 export const COMPANY = "/company"
 export const CART = "/cart"
 export const SERVICES = "/subscriptionPlan"
@@ -14,12 +15,12 @@ export const USER_ENDPOINT = {
   CHANGE_PASSWORD: "/user/change-password",
 
   // Onboarding
-  CLINIC: `${AUTH_BASE}/clinic`,
-  BANK_ACCOUNT: `${AUTH_BASE}/bank-account`,
-  AVAILABILITY: `${AUTH_BASE}/availability`,
-  SUBSCRIPTION: `${AUTH_BASE}/subscription`,
-  TERMS_AND_CONDITIONS: `${AUTH_BASE}/terms-and-conditions`,
-  PROFILE_FINALIZATION: `${AUTH_BASE}/profile-finalization`,
+  CLINIC: `${ONBOARDING_BASE}/clinic`,
+  BANK_ACCOUNT: `${ONBOARDING_BASE}/bank-account`,
+  AVAILABILITY: `${ONBOARDING_BASE}/availability`,
+  SUBSCRIPTION: `${ONBOARDING_BASE}/subscription`,
+  TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-and-conditions`,
+  PROFILE_FINALIZATION: `${ONBOARDING_BASE}/profile-finalization`,
 
   // Authenticate User routes endpoint
   ACTIVITY: `/activity`,

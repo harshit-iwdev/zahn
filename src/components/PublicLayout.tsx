@@ -8,7 +8,8 @@ import { AvailabilitySetup } from "./AvailabilitySetup";
 import { SubscriptionPlanSelection } from "./SubscriptionPlanSelection";
 import { TermsAndConditions } from "./TermsAndConditions";
 import { useAppDispatch } from "../redux/hooks";
-import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData, setUserData } from "../reduxSlice/dashboardSlice";
+import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "../reduxSlice/dashboardSlice";
+import { ROUTES } from "@/routes";
 
 interface PublicLayoutProps { }
 
@@ -103,7 +104,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
         console.log('userData', userData);
         if (userData) {
             setProfileData(prev => ({ ...prev, ...userData }));
-            dispatch(setUserData(userData));  // Dispatch the user data to the Redux store
         }
         setShowRegistration(false);
         setShowClinicOnboarding(true);
@@ -111,6 +111,7 @@ export function PublicLayout({ }: PublicLayoutProps) {
     };
 
     const handleClinicOnboardingComplete = (clinicData?: any) => {
+        console.log('clinicData---114', clinicData);
         if (clinicData) {
             setProfileData(prev => ({ ...prev, ...clinicData }));
             dispatch(setClinicData(clinicData));  // Dispatch the clinic data to the Redux store
@@ -118,7 +119,7 @@ export function PublicLayout({ }: PublicLayoutProps) {
         }
         setShowClinicOnboarding(false);
         setShowBankAccountOnboarding(true);
-        navigate('/bank-account-onboarding');
+        navigate(ROUTES.ONBOARDING.BANK);
     };
 
     const handleBankAccountOnboardingComplete = (bankData?: any) => {
@@ -195,7 +196,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
         setIsAuthenticated(false);
 
         // Clear all data from the Redux store
-        dispatch(setUserData({}));
         dispatch(setClinicData({}));
         dispatch(setBankData({}));
         dispatch(setAvailabilityData({}));
@@ -207,6 +207,7 @@ export function PublicLayout({ }: PublicLayoutProps) {
     };
 
     const handleClinicOnboardingBack = () => {
+        console.log("handleClinicOnboardingBack");
         setShowClinicOnboarding(false);
         setShowRegistration(true);
         navigate('/register');

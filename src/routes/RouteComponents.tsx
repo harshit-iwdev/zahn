@@ -35,6 +35,13 @@ export interface RouteComponentProps {
     profileData?: any;
     userEmail?: string;
     onNavigateToCalendar?: () => void;
+    // Added specific completion handlers for onboarding steps
+    onClinicComplete?: (data?: any) => void;
+    onBankComplete?: (data?: any) => void;
+    onAvailabilityComplete?: (data?: any) => void;
+    onSubscriptionComplete?: (data?: any) => void;
+    onTermsComplete?: (data?: any) => void;
+    onProfileFinalizeComplete?: () => void;
 }
 
 // Route component factory functions
@@ -54,35 +61,35 @@ export const createRegistrationRoute = (props: RouteComponentProps) => (
 
 export const createClinicOnboardingRoute = (props: RouteComponentProps) => (
     <ClinicOnboarding
-        onComplete={props.onComplete!}
+        onComplete={props.onClinicComplete!}
         onBack={props.onBack!}
     />
 );
 
 export const createBankAccountOnboardingRoute = (props: RouteComponentProps) => (
     <BankAccountOnboarding
-        onComplete={props.onComplete!}
+        onComplete={props.onBankComplete!}
         onBack={props.onBack!}
     />
 );
 
 export const createAvailabilitySetupRoute = (props: RouteComponentProps) => (
     <AvailabilitySetup
-        onComplete={props.onComplete!}
+        onComplete={props.onAvailabilityComplete!}
         onBack={props.onBack!}
     />
 );
 
 export const createSubscriptionPlanSelectionRoute = (props: RouteComponentProps) => (
     <SubscriptionPlanSelection
-        onComplete={props.onComplete!}
+        onComplete={props.onSubscriptionComplete!}
         onBack={props.onBack!}
     />
 );
 
 export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
     <TermsAndConditions
-        onComplete={(data: any) => props.onComplete!(data)}
+        onComplete={(data: any) => props.onTermsComplete!(data)}
         onBack={props.onBack!}
         profileData={props.profileData!}
     />
@@ -90,7 +97,7 @@ export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
 
 export const createProfileFinalizationRoute = (props: RouteComponentProps) => (
     <ProfileFinalization
-        onComplete={props.onComplete!}
+        onComplete={props.onProfileFinalizeComplete!}
         onBack={props.onBack!}
         profileData={props.profileData!}
     />

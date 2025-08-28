@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { executor } from "@/http/executer/index";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { ROUTES } from "@/routes";
+import { useNavigate } from "react-router-dom";
 
 interface BankAccountOnboardingProps {
   onComplete: (bankData: any) => void;
@@ -16,6 +18,7 @@ interface BankAccountOnboardingProps {
 
 export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboardingProps) {
   const bankAccountOnboardingRef = useRef(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     accountHolderName: '',
     routingNumber: '',
@@ -271,7 +274,8 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
               <div className="text-center mt-6">
                 <button
                   type="button"
-                  onClick={onBack}
+                  onClick={() => navigate(-1)}
+                  // onClick={() => navigate(ROUTES.ONBOARDING.CLINIC)}
                   className="text-muted-foreground hover:text-[#433CE7] transition-colors underline"
                 >
                   Go back

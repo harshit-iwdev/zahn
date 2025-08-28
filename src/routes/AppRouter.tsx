@@ -35,11 +35,11 @@ export function AppRouter({ routeProps }: AppRouterProps) {
     if (!isUserAuthenticated && isProtectedRoute(location.pathname)) {
         return <Navigate to={ROUTES.LOGIN} replace />;
     }
-
+    console.log(isUserAuthenticated, "---isUserAuthenticated---38");
     // If user is authenticated and trying to access a public route, redirect to dashboard
-    if (isUserAuthenticated && isPublicRoute(location.pathname)) {
-        return <Navigate to={ROUTES.DASHBOARD} replace />;
-    }
+    // if (isUserAuthenticated && isPublicRoute(location.pathname)) {
+    //     return <Navigate to={ROUTES.DASHBOARD} replace />;
+    // }
 
     return (
         <Routes>

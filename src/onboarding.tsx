@@ -10,7 +10,7 @@ import { TermsAndConditions } from "./components/TermsAndConditions";
 import { ProfileFinalization } from "./components/ProfileFinalization";
 import { ProfileSubmissionConfirmation } from "./components/ProfileSubmissionConfirmation";
 import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
-import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData, setUserData } from "./reduxSlice/dashboardSlice";
+import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "./reduxSlice/dashboardSlice";
 import { useAppDispatch } from "./redux/hooks";
 
 
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
         setShowProfileFinalization(false);
         setShowProfileConfirmation(false);
         setShowPlanUpgrade(false);
-        navigate('/dashboard');
+        // navigate('/dashboard');
     };
 
     const handleShowPlanUpgrade = () => {
@@ -113,7 +113,6 @@ export default function OnboardingPage() {
         console.log('userData', userData);
         if (userData) {
             setProfileData(prev => ({ ...prev, ...userData }));
-            dispatch(setUserData(userData));  // Dispatch the user data to the Redux store
         }
         setShowRegistration(false);
         setShowClinicOnboarding(true);
@@ -197,7 +196,7 @@ export default function OnboardingPage() {
         setShowProfileConfirmation(false);
         setIsAuthenticated(true);
         // API call to save profile submission confirmation
-        navigate('/dashboard');
+        // navigate('/dashboard');
     };
 
     const handleProfileConfirmationLogOut = () => {
@@ -205,7 +204,6 @@ export default function OnboardingPage() {
         setIsAuthenticated(false);
 
         // Clear all data from the Redux store
-        dispatch(setUserData({}));
         dispatch(setClinicData({}));
         dispatch(setBankData({}));
         dispatch(setAvailabilityData({}));

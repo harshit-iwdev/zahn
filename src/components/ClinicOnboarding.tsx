@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/routes";
 
 interface ClinicOnboardingProps {
-  onComplete: () => void;
+  onComplete: (data: any) => void;
   onBack: () => void;
 }
 
@@ -30,20 +32,21 @@ const DENTAL_SPECIALTIES = [
 
 export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) {
   const clinicOnboardingRef = useRef(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     clinicName: '',
     clinicAddress: '',
-    specialties: [] as string[]
+    doctorSpecialities: [] as string[]
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isFormValid = () => {
     return formData.clinicName.trim() &&
-           formData.clinicAddress.trim() &&
-           formData.specialties.length > 0;
+      formData.clinicAddress.trim() &&
+      formData.doctorSpecialities.length > 0;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -54,9 +57,9 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
   const handleSpecialtyToggle = (specialty: string) => {
     setFormData(prev => ({
       ...prev,
-      specialties: prev.specialties.includes(specialty)
-        ? prev.specialties.filter(s => s !== specialty)
-        : [...prev.specialties, specialty]
+      doctorSpecialities: prev.doctorSpecialities.includes(specialty)
+        ? prev.doctorSpecialities.filter(s => s !== specialty)
+        : [...prev.doctorSpecialities, specialty]
     }));
     setError('');
   };
@@ -64,24 +67,24 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
   const removeSpecialty = (specialty: string) => {
     setFormData(prev => ({
       ...prev,
-      specialties: prev.specialties.filter(s => s !== specialty)
+      doctorSpecialities: prev.doctorSpecialities.filter(s => s !== specialty)
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.clinicName.trim()) {
       setError('Please enter your clinic name');
       return;
     }
-    
+
     if (!formData.clinicAddress.trim()) {
       setError('Please enter your clinic address');
       return;
     }
-    
-    if (formData.specialties.length === 0) {
+
+    if (formData.doctorSpecialities.length === 0) {
       setError('Please select at least one specialty');
       return;
     }
@@ -94,10 +97,17 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
       const url = USER_ENDPOINT.CLINIC;
       const exe = executor("post", url);
       clinicOnboardingRef.current = exe;
-      const response = await clinicOnboardingRef.current.execute(formData);
-      console.log(response);
+      const axiosResponse = await clinicOnboardingRef.current.execute(formData);
+      console.log(axiosResponse);
       console.log('Clinic onboarding data:', formData);
-      onComplete();
+      const apiBody = axiosResponse?.data;
+      const clinicData = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && clinicData) {
+        console.log('[ClinicOnboarding] onComplete payload:', clinicData);
+        onComplete(clinicData);
+      } else {
+        setError('Failed to save clinic information. Please try again.');
+      }
     } catch (err) {
       setError('Failed to save clinic information. Please try again.');
     } finally {
@@ -117,7 +127,7 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
               This helps patients find you based on your expertise.
             </p>
           </CardHeader>
-          
+
           <CardContent className="px-8 pb-12">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Error Alert */}
@@ -172,11 +182,11 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
                 <Label className="text-foreground">
                   Specialty
                 </Label>
-                
+
                 {/* Selected Specialties */}
-                {formData.specialties.length > 0 && (
+                {formData.doctorSpecialities.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.specialties.map(specialty => (
+                    {formData.doctorSpecialities.map(specialty => (
                       <div
                         key={specialty}
                         className="bg-[#E5E3FB] text-[#433CE7] px-3 py-1 rounded-lg flex items-center gap-2 text-sm"
@@ -203,10 +213,10 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className="w-full pl-12 pr-12 h-14 bg-input-background border border-border rounded-xl text-left flex items-center justify-between hover:border-[#433CE7] focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     >
-                      <span className={formData.specialties.length === 0 ? "text-muted-foreground" : "text-foreground"}>
-                        {formData.specialties.length === 0 
-                          ? "Select your specialties" 
-                          : `${formData.specialties.length} specialt${formData.specialties.length === 1 ? 'y' : 'ies'} selected`
+                      <span className={formData.doctorSpecialities.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                        {formData.doctorSpecialities.length === 0
+                          ? "Select your specialties"
+                          : `${formData.doctorSpecialities.length} specialt${formData.doctorSpecialities.length === 1 ? 'y' : 'ies'} selected`
                         }
                       </span>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -224,7 +234,7 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
                           className="w-full px-4 py-3 text-left hover:bg-[#E5E3FB] transition-colors flex items-center justify-between group"
                         >
                           <span className="text-foreground">{specialty}</span>
-                          {formData.specialties.includes(specialty) && (
+                          {formData.doctorSpecialities.includes(specialty) && (
                             <Check className="w-4 h-4 text-[#433CE7]" />
                           )}
                         </button>
@@ -254,7 +264,7 @@ export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) 
               <div className="text-center mt-6">
                 <button
                   type="button"
-                  onClick={onBack}
+                  onClick={() => navigate('/login')}
                   className="text-muted-foreground hover:text-[#433CE7] transition-colors underline"
                 >
                   Go back

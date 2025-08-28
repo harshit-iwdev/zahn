@@ -95,24 +95,25 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
   };
 
   const navigateToOnboarding = (onboardingStep: number) => {
+    console.log(onboardingStep, "---onboardingStep---98");
     switch (onboardingStep) {
       case 1:
         navigate(ROUTES.ONBOARDING.CLINIC);
         break;
       case 2:
-        navigate(ROUTES.ONBOARDING.BANK);
+        navigate(ROUTES.ONBOARDING.PROFILE);
         break;
       case 3:
-        navigate(ROUTES.ONBOARDING.AVAILABILITY);
+        navigate(ROUTES.ONBOARDING.BANK);
         break;
       case 4:
-        navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
+        navigate(ROUTES.ONBOARDING.AVAILABILITY);
         break;
       case 5:
-        navigate(ROUTES.ONBOARDING.TERMS);
+        navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
         break;
       case 6:
-        navigate(ROUTES.ONBOARDING.PROFILE);
+        navigate(ROUTES.ONBOARDING.TERMS);
         break;
       default:
         navigate(ROUTES.LOGIN);

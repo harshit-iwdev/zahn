@@ -1,11 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface DashboardInitialState {
-    isAuthenticated: boolean;
     isLoading: boolean;
     isError: boolean;
     errorMessage: string;
-    userData: any;
     clinicData: any;
     bankData: any;
     availabilityData: any;
@@ -14,11 +12,9 @@ interface DashboardInitialState {
 }
 
 const initialState: DashboardInitialState = {
-    isAuthenticated: false,
     isLoading: false,
     isError: false,
     errorMessage: '',
-    userData: {},
     clinicData: {},
     bankData: {},
     availabilityData: {},
@@ -30,9 +26,6 @@ export const dashboardSlice = createSlice({
     name: 'dashboard',
     initialState,
     reducers: {
-        setUserData: (state, action: PayloadAction<any>) => {
-            state.userData = { ...action.payload }
-        },
         setClinicData: (state, action: PayloadAction<any>) => {
             state.clinicData = { ...action.payload }
         },
@@ -53,5 +46,5 @@ export const dashboardSlice = createSlice({
 
 const dashboardReducer = dashboardSlice.reducer;
 
-export const { setUserData, setClinicData, setBankData, setAvailabilityData, setSubscriptionData, setAgreementData } = dashboardSlice.actions;
+export const { setClinicData, setBankData, setAvailabilityData, setSubscriptionData, setAgreementData } = dashboardSlice.actions;
 export default dashboardReducer;

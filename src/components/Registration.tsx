@@ -101,16 +101,21 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
       const exe = executor("post", url);
       registerRef.current = exe;
       const response = await registerRef.current.execute(formData);
-      if (response && response.data.data.id && response.data.token) {
-        dispatch(setLoginUserData(response.data.data));
+      const responseData = response.data;
+      console.log(responseData, "---responseData---105")
+      if (responseData.success && responseData.data.id && responseData.token) {
+        localStorage.setItem('access_token', responseData.token);
+        localStorage.setItem('user_data', JSON.stringify(responseData.data));
+        if (!responseData.data.onboardingCompleted) {
+          navigate(ROUTES.ONBOARDING.CLINIC);
+        }
+        dispatch(setLoginUserData(responseData.data));
         dispatch(setIsAuthenticated(true));
-        localStorage.setItem('access_token', response.data.token);
-        navigate(ROUTES.ONBOARDING.CLINIC);
       } else {
-        setError('Registration failed. Please try again.');
+        setError(responseData.message);
       }
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError(err.response.data.message[0]);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData, setUserData } from "./reduxSlice/dashboardSlice";
+import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "./reduxSlice/dashboardSlice";
 import { useAppDispatch } from "./redux/hooks";
 import { AppRouter } from "./routes/AppRouter";
 import { RouteComponentProps } from "./routes/RouteComponents";
@@ -91,7 +91,6 @@ export default function App() {
   const handleRegister = (userData?: any) => {
     if (userData) {
       setProfileData(prev => ({ ...prev, ...userData }));
-      dispatch(setUserData(userData));
     }
     navigate(ROUTES.ONBOARDING.CLINIC);
   };
@@ -215,10 +214,10 @@ export default function App() {
     onRegister: handleRegister,
     onShowLogin: handleShowLogin,
     onComplete: (data?: any) => {
-      // This will be overridden by specific handlers
+      // Deprecated generic handler; use step-specific handlers below
     },
     onBack: () => {
-      // This will be overridden by specific handlers
+      // Overridden per route where needed
     },
     onBackToHome: handleProfileConfirmationBackToHome,
     onLogout: handleLogout,
@@ -230,6 +229,13 @@ export default function App() {
     profileData,
     userEmail: profileData.email,
     onNavigateToCalendar: handleNavigateToCalendar,
+    // Step-specific completion handlers
+    onClinicComplete: handleClinicOnboardingComplete,
+    onBankComplete: handleBankAccountOnboardingComplete,
+    onAvailabilityComplete: handleAvailabilitySetupComplete,
+    onSubscriptionComplete: handleSubscriptionPlanSelectionComplete,
+    onTermsComplete: handleTermsAndConditionsComplete,
+    onProfileFinalizeComplete: handleProfileFinalizationComplete,
   };
 
   return (
