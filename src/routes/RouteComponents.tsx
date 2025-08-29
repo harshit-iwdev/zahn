@@ -62,35 +62,30 @@ export const createRegistrationRoute = (props: RouteComponentProps) => (
 export const createClinicOnboardingRoute = (props: RouteComponentProps) => (
     <ClinicOnboarding
         onComplete={props.onClinicComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createBankAccountOnboardingRoute = (props: RouteComponentProps) => (
     <BankAccountOnboarding
         onComplete={props.onBankComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createAvailabilitySetupRoute = (props: RouteComponentProps) => (
     <AvailabilitySetup
         onComplete={props.onAvailabilityComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createSubscriptionPlanSelectionRoute = (props: RouteComponentProps) => (
     <SubscriptionPlanSelection
         onComplete={props.onSubscriptionComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
     <TermsAndConditions
         onComplete={(data: any) => props.onTermsComplete!(data)}
-        onBack={props.onBack!}
         profileData={props.profileData!}
     />
 );
@@ -98,7 +93,6 @@ export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
 export const createProfileFinalizationRoute = (props: RouteComponentProps) => (
     <ProfileFinalization
         onComplete={props.onProfileFinalizeComplete!}
-        onBack={props.onBack!}
         profileData={props.profileData!}
     />
 );

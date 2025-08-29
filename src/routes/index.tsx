@@ -1,6 +1,3 @@
-import React from 'react';
-import { RouteObject } from 'react-router-dom';
-
 // Route configuration types
 export interface RouteConfig {
     path: string;

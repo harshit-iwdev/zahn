@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileFinalizationProps {
-  onComplete: () => void;
-  onBack: () => void;
+  onComplete: (data: any) => void;
   profileData?: {
     fullName: string;
     email: string;
@@ -18,7 +18,9 @@ interface ProfileFinalizationProps {
   };
 }
 
-export function ProfileFinalization({ onComplete, onBack, profileData }: ProfileFinalizationProps) {
+export function ProfileFinalization({ onComplete, profileData }: ProfileFinalizationProps) {
+  const navigate = useNavigate();
+  console.log('profileData---22', profileData);
   const profileFinalizationRef = useRef(null);
   const [files, setFiles] = useState({
     medicalLicense: null as File | null,
@@ -146,21 +148,26 @@ export function ProfileFinalization({ onComplete, onBack, profileData }: Profile
     setError('');
 
     try {
+      // TO-DO: integrate AWS S3 configuration for uploading docs
+
+      const samplePayload = {
+        "dentalLicense": "https://example.com/dental-license.pdf",
+        "cprCard": "https://example.com/cpr-card.pdf",
+        "deaCertificate": "https://example.com/dea-certificate.pdf",
+        "dentalSchoolDiploma": "https://example.com/dental-school-diploma.pdf",
+        "malpracticeCertificate": "https://example.com/malpractice-certificate.pdf",
+        "generalLiabilityCert": "https://example.com/general-liability-certificate.pdf",
+        "specialityCertificate": "https://example.com/speciality-certificate.pdf",
+        "profilePicture": "https://example.com/profile-picture.jpg",
+        "npiNumber": "1234567890"
+    }
       // calling profile finalization API
-      const url = USER_ENDPOINT.PROFILE_FINALIZATION;
+      const url = USER_ENDPOINT.DOCUMENT_UPLOAD;
       const exe = executor("post", url);
       profileFinalizationRef.current = exe;
-      const response = await profileFinalizationRef.current.execute(profileData);
-      console.log(response);
-      
-      // Mock successful submission
-      console.log('Profile verification data:', {
-        ...currentProfileData,
-        medicalLicense: files.medicalLicense,
-        profilePhoto: files.profilePhoto
-      });
-      
-      onComplete();
+      const response = await profileFinalizationRef.current.execute(samplePayload);
+      const responseData = response.data;
+      onComplete(responseData);
     } catch (err) {
       setError('Failed to submit credentials for verification. Please try again.');
     } finally {
@@ -386,7 +393,7 @@ export function ProfileFinalization({ onComplete, onBack, profileData }: Profile
               <div className="text-center mt-6">
                 <button
                   type="button"
-                  onClick={onBack}
+                  onClick={() => navigate(-1)}
                   className="text-muted-foreground hover:text-[#433CE7] transition-colors underline"
                 >
                   Go back

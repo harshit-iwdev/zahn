@@ -8,10 +8,9 @@ import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { executor } from "@/http/executer/index";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
-
+import { useNavigate } from "react-router-dom";
 interface AvailabilitySetupProps {
   onComplete: (availabilityData: any) => void;
-  onBack: () => void;
 }
 
 type TimeSlot = {
@@ -74,13 +73,13 @@ const TIMEZONES = [
   { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' }
 ];
 
-export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps) {
+export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
   const availabilitySetupRef = useRef(null);
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
   const [timezone, setTimezone] = useState('America/New_York');
   const [calendarSync, setCalendarSync] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigate = useNavigate();
   // Auto-detect timezone on component mount
   useEffect(() => {
     const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -161,6 +160,13 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
         totalHours: getTotalHours()
       };
 
+      const modifiedData = {
+        timezone,
+        calendarSync,
+        schedule: {} as Record<string, number[]>,
+        totalHours: getTotalHours()
+      };
+
       // Group slots by day
       DAYS.forEach(day => {
         availabilityData.schedule[day] = HOURS.filter(hour =>
@@ -172,10 +178,12 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
       const url = USER_ENDPOINT.AVAILABILITY;
       const exe = executor("post", url);
       availabilitySetupRef.current = exe;
-      const response = await availabilitySetupRef.current.execute(availabilityData);
-      console.log(response);
-      console.log('Availability data:', availabilityData);
-      onComplete(availabilityData);
+      const response = await availabilitySetupRef.current.execute({ dentistAvailabilitySchedule: availabilityData, modifedSchedule: modifiedData });
+      const responseData = response.data;
+      console.log('responseData---184', responseData);
+      console.log('Availability data---185', availabilityData);
+      console.log('Modified data---186', modifiedData);
+      onComplete(responseData);
     } catch (error) {
       console.error('Failed to save availability:', error);
     } finally {
@@ -365,7 +373,7 @@ export function AvailabilitySetup({ onComplete, onBack }: AvailabilitySetupProps
               <Button
                 type="button"
                 variant="outline"
-                onClick={onBack}
+                onClick={() => navigate(-1)}
                 className="px-8 py-3"
               >
                 Go Back

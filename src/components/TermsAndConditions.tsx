@@ -8,10 +8,10 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { executor } from "@/http/executer/index";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { useNavigate } from "react-router-dom";
 
 interface TermsAndConditionsProps {
   onComplete: (agreementData: any) => void;
-  onBack: () => void;
   profileData: any;
 }
 
@@ -23,12 +23,12 @@ type AgreementSection = {
   fullContent: string;
 };
 
-export function TermsAndConditions({ onComplete, onBack, profileData }: TermsAndConditionsProps) {
+export function TermsAndConditions({ onComplete, profileData }: TermsAndConditionsProps) {
   const termsAndConditionsRef = useRef(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigate = useNavigate();
   const AGREEMENT_SECTIONS: AgreementSection[] = [
     {
       id: 'independence',
@@ -234,10 +234,10 @@ TAX RESPONSIBILITY:
       const url = USER_ENDPOINT.TERMS_AND_CONDITIONS;
       const exe = executor("post", url);
       termsAndConditionsRef.current = exe;
-      const response = await termsAndConditionsRef.current.execute(agreementData);
-      console.log(response);
-      console.log('Agreement data:', agreementData);
-      onComplete(agreementData);
+      const response = await termsAndConditionsRef.current.execute({ termsAgreement: true });
+      console.log('response---238', response);
+      const responseData = response.data
+      onComplete(responseData);
     } catch (error) {
       console.error('Failed to save agreements:', error);
     } finally {
@@ -365,7 +365,7 @@ TAX RESPONSIBILITY:
               <Button
                 type="button"
                 variant="outline"
-                onClick={onBack}
+                onClick={() => navigate(-1)}
                 className="px-8 py-3"
               >
                 Go Back

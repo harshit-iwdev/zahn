@@ -12,6 +12,7 @@ import { ProfileSubmissionConfirmation } from "./components/ProfileSubmissionCon
 import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "./reduxSlice/dashboardSlice";
 import { useAppDispatch } from "./redux/hooks";
+import { ROUTES } from "./routes";
 
 
 export default function OnboardingPage() {
@@ -185,11 +186,14 @@ export default function OnboardingPage() {
         setShowProfileFinalization(true);
     };
 
-    const handleProfileFinalizationComplete = () => {
+    const handleProfileFinalizationComplete = (profileData?: any) => {
+        if (profileData) {
+            setProfileData(prev => ({ ...prev, ...profileData }));
+        }
         setShowProfileFinalization(false);
         setShowProfileConfirmation(true);
         // API call to save profile finalization
-        navigate('/profile-submission-confirmation');
+        navigate(ROUTES.ONBOARDING.CONFIRMATION)
     };
 
     const handleProfileConfirmationBackToHome = () => {
@@ -291,7 +295,6 @@ export default function OnboardingPage() {
         return (
             <ProfileFinalization
                 onComplete={handleProfileFinalizationComplete}
-                onBack={handleProfileFinalizationBack}
                 profileData={profileData}
             />
         );
@@ -302,7 +305,6 @@ export default function OnboardingPage() {
         return (
             <TermsAndConditions
                 onComplete={handleTermsAndConditionsComplete}
-                onBack={handleTermsAndConditionsBack}
                 profileData={profileData}
             />
         );
@@ -313,7 +315,6 @@ export default function OnboardingPage() {
         return (
             <SubscriptionPlanSelection
                 onComplete={handleSubscriptionPlanSelectionComplete}
-                onBack={handleSubscriptionPlanSelectionBack}
             />
         );
     }
@@ -323,7 +324,6 @@ export default function OnboardingPage() {
         return (
             <AvailabilitySetup
                 onComplete={handleAvailabilitySetupComplete}
-                onBack={handleAvailabilitySetupBack}
             />
         );
     }
@@ -333,7 +333,6 @@ export default function OnboardingPage() {
         return (
             <BankAccountOnboarding
                 onComplete={handleBankAccountOnboardingComplete}
-                onBack={handleBankAccountOnboardingBack}
             />
         );
     }
@@ -343,7 +342,6 @@ export default function OnboardingPage() {
         return (
             <ClinicOnboarding
                 onComplete={handleClinicOnboardingComplete}
-                onBack={handleClinicOnboardingBack}
             />
         );
     }

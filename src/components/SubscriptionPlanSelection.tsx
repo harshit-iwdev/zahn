@@ -1,87 +1,57 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Crown, Star, Check, CreditCard } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { executor } from "@/http/executer/index";
 import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { useNavigate } from "react-router-dom";
 
 interface SubscriptionPlanSelectionProps {
   onComplete: (subscriptionData: any) => void;
-  onBack: () => void;
 }
 
-type PlanTier = 'tier1' | 'tier2' | null;
-
-const PLANS = {
-  tier1: {
-    name: 'Tier 1',
-    price: 199,
-    description: 'Perfect for growing practices',
-    features: [
-      'Basic platform access',
-      'Listed in patient-facing search',
-      'Up to 5 new-patient bookings/month',
-      'Real-time calendar sync (coming soon)',
-      'Basic profile with contact info',
-      'Standard search ranking'
-    ],
-    limitations: [
-      '5 booking limit per month',
-      'Standard search visibility',
-      'Basic profile features only'
-    ]
-  },
-  tier2: {
-    name: 'Tier 2',
-    price: 599,
-    description: 'For established practices seeking growth',
-    features: [
-      'Unlimited new-patient bookings',
-      'Priority in search results',
-      'Enhanced profile (photos, videos, reviews)',
-      'Direct patient messaging (coming soon)',
-      'Advanced analytics & marketing insights',
-      'Recall & retention tools',
-      'Premium search placement',
-      'Patient review management',
-      'Marketing campaign tools'
-    ],
-    limitations: []
-  }
-};
-
-export function SubscriptionPlanSelection({ onComplete, onBack }: SubscriptionPlanSelectionProps) {
+export function SubscriptionPlanSelection({ onComplete }: SubscriptionPlanSelectionProps) {
   const subscriptionPlanSelectionRef = useRef(null);
-  const [selectedPlan, setSelectedPlan] = useState<PlanTier>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handlePlanSelect = (plan: PlanTier) => {
-    setSelectedPlan(plan);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const handlePlanSelect = (planId: string) => {
+    setSelectedPlanId(planId);
   };
 
+  useEffect(() => {
+    getAvailablePlans();
+  }, []);
+
+  const getAvailablePlans = async () => {
+    const url = USER_ENDPOINT.GET_SUBSCRIPTION_PLANS;
+    const exe = executor("get", url);
+    const response = await exe.execute();
+    const responseData = response.data;
+    setAvailablePlans(responseData.data);
+  }
+
   const handleSubmit = async () => {
-    if (!selectedPlan) return;
+    if (!selectedPlanId) return;
 
     setIsLoading(true);
 
     try {
       const subscriptionData = {
-        tier: selectedPlan,
-        planName: PLANS[selectedPlan].name,
-        monthlyPrice: PLANS[selectedPlan].price,
-        features: PLANS[selectedPlan].features,
-        selectedAt: new Date().toISOString()
+        planId: selectedPlanId,
+        planName: availablePlans.find(plan => plan.plan_id === selectedPlanId)?.plan_name,
       };
 
       // calling subscription plan selection API
-      const url = USER_ENDPOINT.SUBSCRIPTION;
+      const url = USER_ENDPOINT.SELECT_SUBSCRIPTION_PLAN;
       const exe = executor("post", url);
       subscriptionPlanSelectionRef.current = exe;
       const response = await subscriptionPlanSelectionRef.current.execute(subscriptionData);
-      console.log(response);
-      console.log('Subscription data:', subscriptionData);
-      onComplete(subscriptionData);
+      const responseData = response.data;
+      console.log('responseData---93', responseData);
+      onComplete(responseData.data);
     } catch (error) {
       console.error('Failed to save subscription:', error);
     } finally {
@@ -106,132 +76,66 @@ export function SubscriptionPlanSelection({ onComplete, onBack }: SubscriptionPl
               ZaaN offers flexible access based on your needs. Choose the plan that fits your patient flow and practice goals. You can upgrade anytime.
             </p>
           </CardHeader>
-          
+
           <CardContent className="px-8 pb-12">
             {/* Plan Comparison Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              {/* Tier 1 Plan */}
-              <Card className={`relative transition-all duration-300 hover:shadow-lg ${
-                selectedPlan === 'tier1' 
-                  ? 'ring-2 ring-[#E5E3FB] shadow-lg bg-[#E5E3FB]/10' 
-                  : 'border-border hover:shadow-md'
-              }`}>
-                <CardHeader className="pb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <CardTitle className="text-2xl text-foreground">
-                      {PLANS.tier1.name}
-                    </CardTitle>
-                    {selectedPlan === 'tier1' && (
-                      <Badge className="bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]">
-                        Selected
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-foreground">
-                        ${PLANS.tier1.price}
-                      </span>
-                      <span className="text-muted-foreground">/month</span>
+              {availablePlans.length > 0 && availablePlans.map((plan, index) => (
+                <Card key={index} className={`relative transition-all duration-300 hover:shadow-lg ${selectedPlanId === plan.plan_id
+                    ? 'ring-2 ring-[#E5E3FB] shadow-lg bg-[#E5E3FB]/10'
+                    : 'border-border hover:shadow-md'
+                  }`}>
+                  <CardHeader className="pb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <CardTitle className="text-2xl text-foreground">
+                        {plan.plan_name}
+                      </CardTitle>
+                      {selectedPlanId === plan.plan_id && (
+                        <Badge className="bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]">
+                          Selected
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-muted-foreground mt-2">{PLANS.tier1.description}</p>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  {/* Features */}
-                  <div className="space-y-3">
-                    {PLANS.tier1.features.map((feature, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                          feature.includes('coming soon') ? 'text-muted-foreground' : 'text-[#433CE7]'
-                        }`} />
-                        <span className={`text-sm ${
-                          feature.includes('coming soon') ? 'text-muted-foreground' : 'text-foreground'
-                        }`}>
-                          {feature}
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-foreground">
+                          ${plan.plan_price}
                         </span>
+                        <span className="text-muted-foreground">/${plan.plan_duration_type}</span>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Select Button */}
-                  <Button
-                    onClick={() => handlePlanSelect('tier1')}
-                    variant={selectedPlan === 'tier1' ? 'default' : 'outline'}
-                    className={`w-full h-12 transition-all duration-200 ${
-                      selectedPlan === 'tier1'
-                        ? 'bg-[#E5E3FB] hover:bg-[#E5E3FB]/80 text-[#433CE7] border-[#E5E3FB]'
-                        : 'border-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]/20'
-                    }`}
-                  >
-                    {selectedPlan === 'tier1' ? 'Selected' : 'Select Tier 1'}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Tier 2 Plan */}
-              <Card className={`relative transition-all duration-300 hover:shadow-lg ${
-                selectedPlan === 'tier2' 
-                  ? 'ring-2 ring-[#433CE7] shadow-xl bg-[#433CE7]/5' 
-                  : 'border-border hover:shadow-md'
-              }`}>
-                <CardHeader className="pb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <CardTitle className="text-2xl text-foreground flex items-center gap-2">
-                      {PLANS.tier2.name}
-                      <Star className="w-5 h-5 text-[#433CE7]" />
-                    </CardTitle>
-                    {selectedPlan === 'tier2' && (
-                      <Badge className="bg-[#433CE7] text-white hover:bg-[#433CE7]">
-                        Selected
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-foreground">
-                        ${PLANS.tier2.price}
-                      </span>
-                      <span className="text-muted-foreground">/month</span>
+                      <p className="text-muted-foreground mt-2">{plan.plan_description}</p>
                     </div>
-                    <p className="text-muted-foreground mt-2">{PLANS.tier2.description}</p>
-                  </div>
-                  <Badge className="bg-[#433CE7]/10 text-[#433CE7] hover:bg-[#433CE7]/10 px-3 py-1">
-                    Most Popular
-                  </Badge>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  {/* Features */}
-                  <div className="space-y-3">
-                    {PLANS.tier2.features.map((feature, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                          feature.includes('coming soon') ? 'text-muted-foreground' : 'text-[#433CE7]'
-                        }`} />
-                        <span className={`text-sm ${
-                          feature.includes('coming soon') ? 'text-muted-foreground' : 'text-foreground'
-                        }`}>
-                          {feature}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  </CardHeader>
 
-                  {/* Select Button */}
-                  <Button
-                    onClick={() => handlePlanSelect('tier2')}
-                    className={`w-full h-12 transition-all duration-200 ${
-                      selectedPlan === 'tier2'
-                        ? 'bg-[#433CE7] hover:bg-[#3730a3] text-white'
-                        : 'bg-[#433CE7] hover:bg-[#3730a3] text-white'
-                    }`}
-                  >
-                    {selectedPlan === 'tier2' ? 'Selected' : 'Select Tier 2'}
-                  </Button>
-                </CardContent>
-              </Card>
+                  <CardContent className="space-y-6">
+                    {/* Features */}
+                    <div className="space-y-3">
+                      {plan.plan_features.map((feature: string, index: number) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${feature.includes('coming soon') ? 'text-muted-foreground' : 'text-[#433CE7]'
+                            }`} />
+                          <span className={`text-sm ${feature.includes('coming soon') ? 'text-muted-foreground' : 'text-foreground'
+                            }`}>
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Select Button */}
+                    <Button
+                      onClick={() => handlePlanSelect(plan.plan_id)}
+                      variant={selectedPlanId === plan.plan_id ? 'default' : 'outline'}
+                      className={`w-full h-12 transition-all duration-200 ${selectedPlanId === plan.plan_id
+                          ? 'bg-[#E5E3FB] hover:bg-[#E5E3FB]/80 text-[#433CE7] border-[#E5E3FB]'
+                          : 'border-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]/20'
+                        }`}
+                    >
+                      {selectedPlanId === plan.plan_id ? 'Selected' : 'Select Tier 1'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             {/* Billing Information */}
@@ -254,7 +158,7 @@ export function SubscriptionPlanSelection({ onComplete, onBack }: SubscriptionPl
               <Button
                 type="button"
                 variant="outline"
-                onClick={onBack}
+                onClick={() => navigate(-1)}
                 className="px-8 py-3"
               >
                 Go Back
@@ -262,7 +166,7 @@ export function SubscriptionPlanSelection({ onComplete, onBack }: SubscriptionPl
 
               <Button
                 onClick={handleSubmit}
-                disabled={!selectedPlan || isLoading}
+                disabled={!selectedPlanId || isLoading}
                 className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-12 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (

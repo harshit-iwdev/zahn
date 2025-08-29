@@ -17,9 +17,11 @@ export const USER_ENDPOINT = {
   // Onboarding
   CLINIC: `${ONBOARDING_BASE}/clinic`,
   BANK_ACCOUNT: `${ONBOARDING_BASE}/bank-account`,
-  AVAILABILITY: `${ONBOARDING_BASE}/availability`,
-  SUBSCRIPTION: `${ONBOARDING_BASE}/subscription`,
-  TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-and-conditions`,
+  AVAILABILITY: `${ONBOARDING_BASE}/availability-timings`,
+  GET_SUBSCRIPTION_PLANS: `${ONBOARDING_BASE}/subscription-plans/get-all`,
+  SELECT_SUBSCRIPTION_PLAN: `${ONBOARDING_BASE}/subscription-plans/select`,
+  TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-agreement`,
+  DOCUMENT_UPLOAD: `${ONBOARDING_BASE}/upload-documents`,
   PROFILE_FINALIZATION: `${ONBOARDING_BASE}/profile-finalization`,
 
   // Authenticate User routes endpoint

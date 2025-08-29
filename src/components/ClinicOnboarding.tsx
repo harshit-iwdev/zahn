@@ -12,7 +12,6 @@ import { ROUTES } from "@/routes";
 
 interface ClinicOnboardingProps {
   onComplete: (data: any) => void;
-  onBack: () => void;
 }
 
 const DENTAL_SPECIALTIES = [
@@ -30,7 +29,7 @@ const DENTAL_SPECIALTIES = [
   "Emergency Dentistry"
 ];
 
-export function ClinicOnboarding({ onComplete, onBack }: ClinicOnboardingProps) {
+export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
   const clinicOnboardingRef = useRef(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({

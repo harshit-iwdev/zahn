@@ -123,6 +123,7 @@ export function PublicLayout({ }: PublicLayoutProps) {
     };
 
     const handleBankAccountOnboardingComplete = (bankData?: any) => {
+        console.log('bankData---126', bankData);
         if (bankData) {
             setProfileData(prev => ({
                 ...prev,
@@ -133,10 +134,11 @@ export function PublicLayout({ }: PublicLayoutProps) {
         }
         setShowBankAccountOnboarding(false);
         setShowAvailabilitySetup(true);
-        navigate('/availability-setup');
+        navigate(ROUTES.ONBOARDING.AVAILABILITY);
     };
 
     const handleAvailabilitySetupComplete = (availabilityData?: any) => {
+        console.log('availabilityData---141', availabilityData);
         if (availabilityData) {
             setProfileData(prev => ({
                 ...prev,
@@ -147,10 +149,11 @@ export function PublicLayout({ }: PublicLayoutProps) {
         }
         setShowAvailabilitySetup(false);
         setShowSubscriptionPlanSelection(true);
-        navigate('/subscription-plan-selection');
+        navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
     };
 
     const handleSubscriptionPlanSelectionComplete = (subscriptionData?: any) => {
+        console.log('subscriptionData---156', subscriptionData);
         if (subscriptionData) {
             setProfileData(prev => ({
                 ...prev,
@@ -161,10 +164,11 @@ export function PublicLayout({ }: PublicLayoutProps) {
         }
         setShowSubscriptionPlanSelection(false);
         setShowTermsAndConditions(true);
-        navigate('/terms-and-conditions');
+        navigate(ROUTES.ONBOARDING.TERMS);
     };
 
     const handleTermsAndConditionsComplete = (agreementData?: any) => {
+        console.log('agreementData---171', agreementData);
         if (agreementData) {
             setProfileData(prev => ({
                 ...prev,
@@ -175,20 +179,21 @@ export function PublicLayout({ }: PublicLayoutProps) {
         }
         setShowTermsAndConditions(false);
         setShowProfileFinalization(true);
+        navigate(ROUTES.ONBOARDING.PROFILE);
     };
 
     const handleProfileFinalizationComplete = () => {
         setShowProfileFinalization(false);
         setShowProfileConfirmation(true);
         // API call to save profile finalization
-        navigate('/profile-submission-confirmation');
+        navigate(ROUTES.DASHBOARD);
     };
 
     const handleProfileConfirmationBackToHome = () => {
         setShowProfileConfirmation(false);
         setIsAuthenticated(true);
         // API call to save profile submission confirmation
-        navigate('/dashboard');
+        navigate(ROUTES.DASHBOARD);
     };
 
     const handleProfileConfirmationLogOut = () => {
@@ -203,44 +208,44 @@ export function PublicLayout({ }: PublicLayoutProps) {
         dispatch(setAgreementData({}));
 
         // API call to logout user
-        navigate('/login');
+        navigate(ROUTES.LOGIN);
     };
 
     const handleClinicOnboardingBack = () => {
         console.log("handleClinicOnboardingBack");
         setShowClinicOnboarding(false);
         setShowRegistration(true);
-        navigate('/register');
+        navigate(ROUTES.REGISTER);
     };
 
     const handleBankAccountOnboardingBack = () => {
         setShowBankAccountOnboarding(false);
         setShowClinicOnboarding(true);
-        navigate('/clinic-onboarding');
+        navigate(ROUTES.ONBOARDING.CLINIC);
     };
 
     const handleAvailabilitySetupBack = () => {
         setShowAvailabilitySetup(false);
         setShowBankAccountOnboarding(true);
-        navigate('/bank-account-onboarding');
+        navigate(ROUTES.ONBOARDING.BANK);
     };
 
     const handleSubscriptionPlanSelectionBack = () => {
         setShowSubscriptionPlanSelection(false);
         setShowAvailabilitySetup(true);
-        navigate('/availability-setup');
+        navigate(ROUTES.ONBOARDING.AVAILABILITY);
     };
 
     const handleTermsAndConditionsBack = () => {
         setShowTermsAndConditions(false);
         setShowSubscriptionPlanSelection(true);
-        navigate('/subscription-plan-selection');
+        navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
     };
 
     const handleProfileFinalizationBack = () => {
         setShowProfileFinalization(false);
         setShowTermsAndConditions(true);
-        navigate('/terms-and-conditions');
+        navigate(ROUTES.ONBOARDING.TERMS);
     };
 
     const handleLogout = () => {
@@ -255,17 +260,17 @@ export function PublicLayout({ }: PublicLayoutProps) {
         setShowProfileConfirmation(false);
         setShowPlanUpgrade(false);
         // API call to logout user
-        navigate('/login');
+        navigate(ROUTES.LOGIN);
     };
 
     const handleShowRegistration = () => {
         setShowRegistration(true);
-        navigate('/register');
+        navigate(ROUTES.REGISTER);
     };
 
     const handleShowLogin = () => {
         setShowRegistration(false);
-        navigate('/login');
+        navigate(ROUTES.LOGIN);
     };
 
     return (
@@ -289,7 +294,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
                     element={
                         <ClinicOnboarding
                             onComplete={handleClinicOnboardingComplete}
-                            onBack={handleClinicOnboardingBack}
                         />
                     }
                 />
@@ -298,7 +302,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
                     element={
                         <BankAccountOnboarding
                             onComplete={handleBankAccountOnboardingComplete}
-                            onBack={handleBankAccountOnboardingBack}
                         />
                     }
                 />
@@ -307,7 +310,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
                     element={
                         <AvailabilitySetup
                             onComplete={handleAvailabilitySetupComplete}
-                            onBack={handleAvailabilitySetupBack}
                         />
                     }
                 />
@@ -316,7 +318,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
                     element={
                         <SubscriptionPlanSelection
                             onComplete={handleSubscriptionPlanSelectionComplete}
-                            onBack={handleSubscriptionPlanSelectionBack}
                         />
                     }
                 />
@@ -326,7 +327,6 @@ export function PublicLayout({ }: PublicLayoutProps) {
                         <TermsAndConditions
                             onComplete={handleTermsAndConditionsComplete}
                             profileData={profileData}
-                            onBack={handleTermsAndConditionsBack}
                         />
                     }
                 />
