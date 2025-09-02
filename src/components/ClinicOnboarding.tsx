@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/routes";
@@ -93,7 +93,7 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
 
     try {
       // calling clinic onboarding API
-      const url = USER_ENDPOINT.CLINIC;
+      const url = DENTIST_ENDPOINT.CLINIC;
       const exe = executor("post", url);
       clinicOnboardingRef.current = exe;
       const axiosResponse = await clinicOnboardingRef.current.execute(formData);

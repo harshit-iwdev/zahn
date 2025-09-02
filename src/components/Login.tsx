@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes/index";
 import { setIsAuthenticated, setLoginUserData } from "../reduxSlice/userSlice";
 import { useDispatch } from "react-redux";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
 
 interface LoginProps {
@@ -69,7 +69,7 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     setIsLoading(true);
     setError('');
     
-    const url = USER_ENDPOINT.LOGIN;
+    const url = DENTIST_ENDPOINT.LOGIN;
     const exe = executor("post", url);
     loginRef.current = exe;
     try {

@@ -3,7 +3,7 @@ import { Upload, Camera, FileText, User, Building2, Stethoscope, Check, X, Shiel
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
 import { useNavigate } from "react-router-dom";
 
@@ -162,7 +162,7 @@ export function ProfileFinalization({ onComplete, profileData }: ProfileFinaliza
         "npiNumber": "1234567890"
     }
       // calling profile finalization API
-      const url = USER_ENDPOINT.DOCUMENT_UPLOAD;
+      const url = DENTIST_ENDPOINT.DOCUMENT_UPLOAD;
       const exe = executor("post", url);
       profileFinalizationRef.current = exe;
       const response = await profileFinalizationRef.current.execute(samplePayload);

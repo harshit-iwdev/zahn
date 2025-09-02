@@ -1,9 +1,11 @@
 export const AUTH_BASE = "/api/v1/auth";
 export const ONBOARDING_BASE = "/api/v1/onboarding";
-export const COMPANY = "/company"
-export const CART = "/cart"
-export const SERVICES = "/subscriptionPlan"
-export const USER_ENDPOINT = {
+export const APPOINTMENTS_BASE = "/api/v1/appointments";
+export const COMPANY = "/company";
+export const CART = "/cart";
+export const SERVICES = "/subscriptionPlan";
+export const DASHBOARD_BASE = "/api/v1/dashboard";
+export const DENTIST_ENDPOINT = {
   // Auth_BASE
   LOGIN: `${AUTH_BASE}/login`,
   REGISTER: `${AUTH_BASE}/register`,
@@ -23,6 +25,17 @@ export const USER_ENDPOINT = {
   TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-agreement`,
   DOCUMENT_UPLOAD: `${ONBOARDING_BASE}/upload-documents`,
   PROFILE_FINALIZATION: `${ONBOARDING_BASE}/profile-finalization`,
+
+  // Appointments
+  TODAY_APPOINTMENTS: `${APPOINTMENTS_BASE}/today`,
+  CONFIRM_APPOINTMENT: `${APPOINTMENTS_BASE}/confirmation`,
+  UPDATE_APPOINTMENT_AVAILABILITY: `${APPOINTMENTS_BASE}/set-availability`,
+
+  // Dashboard
+  GET_DASHBOARD: `${DASHBOARD_BASE}/`,
+
+  // User Subscription
+  USER_SUBSCRIPTION: `${APPOINTMENTS_BASE}/user-subscription`,
 
   // Authenticate User routes endpoint
   ACTIVITY: `/activity`,

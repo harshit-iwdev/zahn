@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { executor } from "@/http/executer/index";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { ROUTES } from "@/routes";
 import { useNavigate } from "react-router-dom";
 
@@ -89,7 +89,7 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
 
     try {
       // calling bank account onboarding API
-      const url = USER_ENDPOINT.BANK_ACCOUNT;
+      const url = DENTIST_ENDPOINT.BANK_ACCOUNT;
       const exe = executor("post", url);
       bankAccountOnboardingRef.current = exe;
       const response = await bankAccountOnboardingRef.current.execute(formData);

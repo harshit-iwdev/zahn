@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { executor } from "@/http/executer/index";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { useNavigate } from "react-router-dom";
 
 interface SubscriptionPlanSelectionProps {
@@ -26,7 +26,7 @@ export function SubscriptionPlanSelection({ onComplete }: SubscriptionPlanSelect
   }, []);
 
   const getAvailablePlans = async () => {
-    const url = USER_ENDPOINT.GET_SUBSCRIPTION_PLANS;
+    const url = DENTIST_ENDPOINT.GET_SUBSCRIPTION_PLANS;
     const exe = executor("get", url);
     const response = await exe.execute();
     const responseData = response.data;
@@ -45,7 +45,7 @@ export function SubscriptionPlanSelection({ onComplete }: SubscriptionPlanSelect
       };
 
       // calling subscription plan selection API
-      const url = USER_ENDPOINT.SELECT_SUBSCRIPTION_PLAN;
+      const url = DENTIST_ENDPOINT.SELECT_SUBSCRIPTION_PLAN;
       const exe = executor("post", url);
       subscriptionPlanSelectionRef.current = exe;
       const response = await subscriptionPlanSelectionRef.current.execute(subscriptionData);

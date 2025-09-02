@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Clock, User, AlertCircle, Crown, Upload, Calculator, CheckCircle, AlertTriangle, CreditCard, Bell, Settings, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -9,6 +9,13 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { AppointmentDetails } from "./AppointmentDetails";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { executor } from "@/http/executer";
+import { formatTime } from "@/utils/formatDateTime";
+import { setAvailabilityData, setSubscriptionData, setTodayAppointments } from "@/reduxSlice/dashboardSlice";
+import { IAppointment } from "@/utils/datatypes";
 
 interface DashboardProps {
   onShowPlanUpgrade?: () => void;
@@ -97,10 +104,60 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const [billingAmount, setBillingAmount] = useState('');
   const [billingFile, setBillingFile] = useState<File | null>(null);
   const [isSubmittingBilling, setIsSubmittingBilling] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<typeof MOCK_DATA.todayAppointments[0] | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
-
+  const todayAppointments = useSelector((state: RootState) => state.dashboard.todayAppointments);
+  const subscriptionData = useSelector((state: RootState) => state.dashboard.subscriptionData);
+  const availabilityData = useSelector((state: RootState) => state.dashboard.availabilityData);
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user);
   const data = MOCK_DATA;
+
+    useEffect(() => {
+      fetchTodayAppointments();
+      fetchUserSubscription();
+  }, [user]);
+
+  const fetchUserSubscription = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.GET_DASHBOARD;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const dashboardData = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && dashboardData) {
+        dispatch(setSubscriptionData(dashboardData.subscriptionData));
+        dispatch(setAvailabilityData(dashboardData.availabilityData));
+      } else {
+        console.log('Failed to fetch dashboard information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to fetch dashboard information. Please try again.');
+    } finally {
+      console.log('Dashboard data fetched successfully');
+    }
+  };
+
+  const fetchTodayAppointments = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.TODAY_APPOINTMENTS;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const appointmentData = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && appointmentData) {
+        dispatch(setTodayAppointments(appointmentData));
+      } else {
+        console.log('Failed to fetch appointment today information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to fetch appointment today information. Please try again.');
+    } finally {
+      console.log('Appointment today data fetched successfully');
+    }
+  };
 
   // Use current subscription data or fallback to mock data
   const subscription = currentSubscription || {
@@ -109,7 +166,6 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     monthlyPrice: 199
   };
 
-  const isTier1 = subscription.tier === "tier1";
   const technologyFee = billingAmount ? parseFloat(billingAmount) * data.billing.technologyFeeRate : 0;
   const netAmount = billingAmount ? parseFloat(billingAmount) - technologyFee : 0;
 
@@ -142,12 +198,13 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
-  const handleViewAppointmentDetails = (appointment: typeof MOCK_DATA.todayAppointments[0]) => {
+  const handleViewAppointmentDetails = (appointment: any) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetails(true);
   };
 
   const handleCloseAppointmentDetails = () => {
+    fetchTodayAppointments();
     setShowAppointmentDetails(false);
     setSelectedAppointment(null);
   };
@@ -161,13 +218,39 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
+  const handleAppointmentAvailability = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.UPDATE_APPOINTMENT_AVAILABILITY;
+      const body = {
+        acceptBookings: !availabilityData[0].acceptNewBookings
+      };
+      const exe = executor("put", url);
+      const axiosResponse = await exe.execute(body);
+      const apiBody = axiosResponse?.data;
+      const availabilityResponse = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData[0].id) {
+        const updatedAvailability = availabilityData.map((item: any, idx: number) =>
+          idx === 0 ? { ...item, acceptNewBookings: availabilityResponse.acceptBookings } : item
+        );
+        dispatch(setAvailabilityData(updatedAvailability));
+      } else {
+        console.log('Failed to update availability information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to update availability information. Please try again.');
+    } finally {
+      console.log('Availability information updated successfully');
+    }
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-white">
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-medium text-foreground mb-2">
-            Hello {data.user.name}
+            Hello {user.loginUserData.fullName}
           </h1>
           <p className="text-muted-foreground">
             Welcome back! Here's what's happening with your practice today.
@@ -178,7 +261,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
         <Alert className="mb-6 border-[#433CE7]/20 bg-[#E5E3FB]/30">
           <Bell className="w-5 h-5 text-[#433CE7]" />
           <AlertDescription className="text-[#433CE7] font-medium">
-            You have {data.todayAppointments.length} appointments today
+            You have {todayAppointments?.length} appointments today
           </AlertDescription>
         </Alert>
 
@@ -198,12 +281,12 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 <div>
                   <p className="font-medium text-foreground">Accept New Bookings</p>
                   <p className="text-sm text-muted-foreground">
-                    {availabilityEnabled ? "Patients can book appointments" : "Booking is paused"}
+                    {availabilityData[0].acceptNewBookings ? "Patients can book appointments" : "Booking is paused"}
                   </p>
                 </div>
                 <Switch
-                  checked={availabilityEnabled}
-                  onCheckedChange={setAvailabilityEnabled}
+                  checked={availabilityData[0].acceptNewBookings}
+                  onCheckedChange={handleAppointmentAvailability}
                   className="data-[state=checked]:bg-[#433CE7]"
                 />
               </div>
@@ -247,21 +330,21 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.todayAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
+                { todayAppointments.length > 0 && todayAppointments?.map((appointment: IAppointment) => (
+                  <div key={appointment.appointment_id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-10 h-10 bg-[#E5E3FB] rounded-lg flex items-center justify-center">
                         <User className="w-5 h-5 text-[#433CE7]" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{appointment.patientName}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                        <p className="font-medium text-foreground">{appointment.patient_data.patient_name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.issue_reported}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-foreground">{appointment.time}</span>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
+                      <span className="text-sm font-medium text-foreground">{formatTime(appointment.appointment_time)}</span>
+                      <Badge className={getStatusColor(appointment.appointment_status)}>
+                        {appointment.appointment_status}
                       </Badge>
                       <Button
                         variant="outline"
@@ -329,18 +412,18 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   <Crown className="w-5 h-5 text-[#433CE7]" />
                   Subscription
                 </CardTitle>
-                <Badge className={isTier1
+                <Badge className={subscriptionData.subscriptionPlan.plan_name === "Tier 1"
                   ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]"
                   : "bg-[#433CE7] text-white hover:bg-[#433CE7]"
                 }>
-                  {subscription.planName}
+                  {subscriptionData.subscriptionPlan.plan_name}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  ${subscription.monthlyPrice}
+                  ${subscriptionData.subscriptionPlan.plan_price}
                 </p>
                 <p className="text-sm text-muted-foreground">per month</p>
               </div>
@@ -351,7 +434,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
-                  {isTier1 ? "Upgrade Plan" : "Manage Plan"}
+                  {subscriptionData.subscriptionPlan.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
                 </Button>
                 <div className="flex items-center justify-center gap-4 text-xs">
                   <Button variant="link" className="p-0 h-auto text-muted-foreground underline">

@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collap
 import { Alert, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { executor } from "@/http/executer/index";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { useNavigate } from "react-router-dom";
 
 interface TermsAndConditionsProps {
@@ -231,7 +231,7 @@ TAX RESPONSIBILITY:
       };
 
       // calling terms and conditions API
-      const url = USER_ENDPOINT.TERMS_AND_CONDITIONS;
+      const url = DENTIST_ENDPOINT.TERMS_AND_CONDITIONS;
       const exe = executor("post", url);
       termsAndConditionsRef.current = exe;
       const response = await termsAndConditionsRef.current.execute({ termsAgreement: true });

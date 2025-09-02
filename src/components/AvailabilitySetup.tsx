@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { executor } from "@/http/executer/index";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { useNavigate } from "react-router-dom";
 interface AvailabilitySetupProps {
   onComplete: (availabilityData: any) => void;
@@ -175,7 +175,7 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
       });
 
       // calling availability setup API
-      const url = USER_ENDPOINT.AVAILABILITY;
+      const url = DENTIST_ENDPOINT.AVAILABILITY;
       const exe = executor("post", url);
       availabilitySetupRef.current = exe;
       const response = await availabilitySetupRef.current.execute({ dentistAvailabilitySchedule: availabilityData, modifedSchedule: modifiedData });

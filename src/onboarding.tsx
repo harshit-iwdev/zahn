@@ -218,42 +218,6 @@ export default function OnboardingPage() {
         navigate('/login');
     };
 
-    const handleClinicOnboardingBack = () => {
-        setShowClinicOnboarding(false);
-        setShowRegistration(true);
-        navigate('/register');
-    };
-
-    const handleBankAccountOnboardingBack = () => {
-        setShowBankAccountOnboarding(false);
-        setShowClinicOnboarding(true);
-        navigate('/clinic-onboarding');
-    };
-
-    const handleAvailabilitySetupBack = () => {
-        setShowAvailabilitySetup(false);
-        setShowBankAccountOnboarding(true);
-        navigate('/bank-account-onboarding');
-    };
-
-    const handleSubscriptionPlanSelectionBack = () => {
-        setShowSubscriptionPlanSelection(false);
-        setShowAvailabilitySetup(true);
-        navigate('/availability-setup');
-    };
-
-    const handleTermsAndConditionsBack = () => {
-        setShowTermsAndConditions(false);
-        setShowSubscriptionPlanSelection(true);
-        navigate('/subscription-plan-selection');
-    };
-
-    const handleProfileFinalizationBack = () => {
-        setShowProfileFinalization(false);
-        setShowTermsAndConditions(true);
-        navigate('/terms-and-conditions');
-    };
-
     const handleLogout = () => {
         setIsAuthenticated(false);
         setShowRegistration(false);
