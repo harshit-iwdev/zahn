@@ -29,51 +29,6 @@ interface DashboardProps {
 
 // Mock data - would come from API in real app
 const MOCK_DATA = {
-  user: {
-    name: "Dr. Smith"
-  },
-  todayAppointments: [
-    {
-      id: 1,
-      patientName: "Sarah Johnson",
-      time: "9:00 AM",
-      status: "confirmed",
-      type: "Cleaning & Checkup",
-      date: "Tuesday, August 12, 2025",
-      email: "sarah.johnson@email.com",
-      phone: "+1 234 567 8900",
-      issueReported: "Annual checkup and blood pressure monitoring",
-      painLevel: "7/10",
-      uploadedPhoto: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=100&h=100&fit=crop",
-      notes: "Pain started 3 days ago, worsens while eating."
-    },
-    {
-      id: 2,
-      patientName: "Michael Chen",
-      time: "11:30 AM",
-      status: "pending",
-      type: "Root Canal",
-      date: "Tuesday, August 12, 2025",
-      email: "michael.chen@email.com",
-      phone: "+1 234 567 8901",
-      issueReported: "Severe tooth pain requiring root canal treatment",
-      painLevel: "9/10",
-      notes: "Tooth pain has been persistent for over a week."
-    },
-    {
-      id: 3,
-      patientName: "Emma Davis",
-      time: "2:00 PM",
-      status: "confirmed",
-      type: "Filling",
-      date: "Tuesday, August 12, 2025",
-      email: "emma.davis@email.com",
-      phone: "+1 234 567 8902",
-      issueReported: "Cavity needs filling on upper left molar",
-      painLevel: "4/10",
-      notes: "Minor sensitivity when eating sweets."
-    }
-  ],
   completedAppointments: [
     {
       id: 4,
@@ -100,7 +55,6 @@ const MOCK_DATA = {
 };
 
 export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubscription }: DashboardProps) {
-  const [availabilityEnabled, setAvailabilityEnabled] = useState(MOCK_DATA.availability.isEnabled);
   const [billingAmount, setBillingAmount] = useState('');
   const [billingFile, setBillingFile] = useState<File | null>(null);
   const [isSubmittingBilling, setIsSubmittingBilling] = useState(false);
@@ -113,9 +67,9 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const user = useSelector((state: RootState) => state.user);
   const data = MOCK_DATA;
 
-    useEffect(() => {
-      fetchTodayAppointments();
-      fetchUserSubscription();
+  useEffect(() => {
+    fetchTodayAppointments();
+    fetchUserSubscription();
   }, [user]);
 
   const fetchUserSubscription = async () => {
@@ -157,13 +111,6 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     } finally {
       console.log('Appointment today data fetched successfully');
     }
-  };
-
-  // Use current subscription data or fallback to mock data
-  const subscription = currentSubscription || {
-    tier: "tier1",
-    planName: "Tier 1",
-    monthlyPrice: 199
   };
 
   const technologyFee = billingAmount ? parseFloat(billingAmount) * data.billing.technologyFeeRate : 0;
@@ -223,13 +170,13 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       // calling appointment today API
       const url = DENTIST_ENDPOINT.UPDATE_APPOINTMENT_AVAILABILITY;
       const body = {
-        acceptBookings: !availabilityData[0].acceptNewBookings
+        acceptBookings: !availabilityData[0]?.acceptNewBookings
       };
       const exe = executor("put", url);
       const axiosResponse = await exe.execute(body);
       const apiBody = axiosResponse?.data;
       const availabilityResponse = apiBody?.data ?? apiBody;
-      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData[0].id) {
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData[0]?.id) {
         const updatedAvailability = availabilityData.map((item: any, idx: number) =>
           idx === 0 ? { ...item, acceptNewBookings: availabilityResponse.acceptBookings } : item
         );
@@ -239,8 +186,6 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       }
     } catch (err) {
       console.log('Failed to update availability information. Please try again.');
-    } finally {
-      console.log('Availability information updated successfully');
     }
   };
 
@@ -281,11 +226,11 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 <div>
                   <p className="font-medium text-foreground">Accept New Bookings</p>
                   <p className="text-sm text-muted-foreground">
-                    {availabilityData[0].acceptNewBookings ? "Patients can book appointments" : "Booking is paused"}
+                    {availabilityData[0]?.acceptNewBookings ? "Patients can book appointments" : "Booking is paused"}
                   </p>
                 </div>
                 <Switch
-                  checked={availabilityData[0].acceptNewBookings}
+                  checked={availabilityData[0]?.acceptNewBookings}
                   onCheckedChange={handleAppointmentAvailability}
                   className="data-[state=checked]:bg-[#433CE7]"
                 />
@@ -359,7 +304,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   </div>
                 ))}
 
-                {data.todayAppointments.length === 0 && (
+                {todayAppointments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No appointments scheduled for today</p>
@@ -412,18 +357,18 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   <Crown className="w-5 h-5 text-[#433CE7]" />
                   Subscription
                 </CardTitle>
-                <Badge className={subscriptionData.subscriptionPlan.plan_name === "Tier 1"
+                <Badge className={subscriptionData?.subscriptionPlan?.plan_name === "Tier 1"
                   ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]"
                   : "bg-[#433CE7] text-white hover:bg-[#433CE7]"
                 }>
-                  {subscriptionData.subscriptionPlan.plan_name}
+                  {subscriptionData?.subscriptionPlan?.plan_name}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  ${subscriptionData.subscriptionPlan.plan_price}
+                  ${subscriptionData?.subscriptionPlan?.plan_price}
                 </p>
                 <p className="text-sm text-muted-foreground">per month</p>
               </div>
@@ -434,7 +379,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
-                  {subscriptionData.subscriptionPlan.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
+                  {subscriptionData?.subscriptionPlan?.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
                 </Button>
                 <div className="flex items-center justify-center gap-4 text-xs">
                   <Button variant="link" className="p-0 h-auto text-muted-foreground underline">

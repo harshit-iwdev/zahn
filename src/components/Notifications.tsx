@@ -1,81 +1,104 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { NotificationItem } from "./NotificationItem";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { executor } from "@/http/executer";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+
 
 export function Notifications() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      type: 'booking' as const,
-      message: 'New booking received for August 7 at 3:00 PM with Sarah Johnson',
-      timestamp: '2 hours ago',
-      isRead: false
-    },
-    {
-      id: '2',
-      type: 'cancellation' as const,
-      message: 'Patient cancelled appointment #P0081 for Michael Chen',
-      timestamp: '4 hours ago',
-      isRead: false
-    },
-    {
-      id: '3',
-      type: 'admin' as const,
-      message: 'Your license was approved by Admin',
-      timestamp: '1 day ago',
-      isRead: false
-    },
-    {
-      id: '4',
-      type: 'booking' as const,
-      message: 'New booking received for August 8 at 10:00 AM with Emily Davis',
-      timestamp: '2 days ago',
-      isRead: true
-    },
-    {
-      id: '5',
-      type: 'cancellation' as const,
-      message: 'Patient cancelled appointment #P0079 for Robert Wilson',
-      timestamp: '3 days ago',
-      isRead: true
-    },
-    {
-      id: '6',
-      type: 'admin' as const,
-      message: 'Monthly report is ready for download',
-      timestamp: '1 week ago',
-      isRead: true
-    },
-    {
-      id: '7',
-      type: 'booking' as const,
-      message: 'New booking received for August 9 at 2:30 PM with David Thompson',
-      timestamp: '1 week ago',
-      isRead: true
+  const [status, setStatus] = useState("all");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [allNotificationCount, setAllNotificationCount] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 10;
+  const [allNotifications, setAllNotifications] = useState([]);
+
+  useEffect(() => {
+    fetchNotifications(status, pageNumber, pageSize);
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications(status, pageNumber, pageSize);
+  }, [status, pageNumber]);
+
+  const fetchNotifications = async (status: string, pageNumber: number, pageSize: number) => {
+    try {
+      // calling get notifications API
+      const url = DENTIST_ENDPOINT.GET_NOTIFICATIONS + `/${status}/${pageNumber}/${pageSize}`;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const notificationsResponse = apiBody?.data ?? apiBody;
+      console.log(notificationsResponse, "---notificationsResponse---87");
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && notificationsResponse) {
+        setAllNotifications(notificationsResponse.records);
+        setAllNotificationCount(notificationsResponse.totalCount);
+        setUnreadCount(notificationsResponse.unreadCount);
+      } else {
+        console.log('Failed to fetch notifications. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to fetch notifications. Please try again.');
+    } finally {
+      console.log('Notifications fetched successfully');
     }
-  ]);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
-  const allNotifications = notifications;
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-
-  const handleMarkRead = (id: string, isRead: boolean) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, isRead }
-          : notification
-      )
-    );
+    
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, isRead: true }))
-    );
+  const handleMarkRead = async (id: string, isRead: boolean) => {
+    try {
+      // calling mark read notification API
+      const url = DENTIST_ENDPOINT.MARK_READ_NOTIFICATION + id;
+      const exe = executor("put", url);
+      const body = {
+        isRead: isRead
+      };
+      const axiosResponse = await exe.execute(body);
+      const apiBody = axiosResponse?.data;
+      const notificationResponse = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && notificationResponse.id === id) {
+        setAllNotifications(prev => 
+          prev.map(notification => 
+            notification.id === id 
+              ? { ...notification, isRead }
+              : notification
+          )
+        );
+        if (isRead) {
+          setUnreadCount(prev => prev - 1);
+        } else {
+          setUnreadCount(prev => prev + 1);
+        }
+      } else {
+        console.log('Failed to mark notification as read. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to mark notification as read. Please try again.');
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      // calling mark read notification API
+      const url = DENTIST_ENDPOINT.MARK_ALL_READ_NOTIFICATION;
+      const exe = executor("put", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const notificationResponse = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && notificationResponse) {
+        setAllNotifications(prev => 
+          prev.map(notification => ({ ...notification, isRead: true }))
+        );
+        setUnreadCount(0);
+      } else {
+        console.log('Failed to mark notification as read. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to mark notification as read. Please try again.');
+    }
   };
 
   return (
@@ -90,7 +113,7 @@ export function Notifications() {
                 Notifications
                 {unreadCount > 0 && (
                   <Badge className="ml-3 bg-[#433CE7] text-white hover:bg-[#433CE7] font-medium">
-                    {unreadCount} new
+                    {unreadCount} unread
                   </Badge>
                 )}
               </h1>
@@ -111,13 +134,18 @@ export function Notifications() {
 
         {/* Notification List */}
         <div>
-          <Tabs defaultValue="all" className="space-y-6">
+          <Tabs defaultValue="all" className="space-y-6" 
+            onValueChange={(value) => {
+              setStatus(value);
+              setPageNumber(1);
+            }}
+          >
             <TabsList className="grid w-full max-w-sm grid-cols-2 h-12">
               <TabsTrigger 
                 value="all"
                 className="data-[state=active]:bg-[#433CE7] data-[state=active]:text-white font-medium text-base"
               >
-                All ({allNotifications.length})
+                All ({allNotificationCount})
               </TabsTrigger>
               <TabsTrigger 
                 value="unread"
@@ -146,8 +174,8 @@ export function Notifications() {
             </TabsContent>
 
             <TabsContent value="unread" className="space-y-4">
-              {unreadNotifications.length > 0 ? (
-                unreadNotifications.map(notification => (
+              {allNotifications.length > 0 ? (
+                allNotifications.map(notification => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}

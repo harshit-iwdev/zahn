@@ -5,6 +5,8 @@ export const COMPANY = "/company";
 export const CART = "/cart";
 export const SERVICES = "/subscriptionPlan";
 export const DASHBOARD_BASE = "/api/v1/dashboard";
+export const NOTIFICATIONS_BASE = "/api/v1/notifications";
+export const USERS_BASE = "/api/v1/users";
 export const DENTIST_ENDPOINT = {
   // Auth_BASE
   LOGIN: `${AUTH_BASE}/login`,
@@ -59,13 +61,17 @@ export const DENTIST_ENDPOINT = {
   GET_PLANS: `${SERVICES}/get-plans`,
 
   //Orders Get Service and subscription
-
   PURCHASED_SERVICES: "/order",
   DISTINCT_SERVICES: "/order/distinct",
   PAYMENT_CHECKOUT: "/payment/create-checkout-session",
+  
   //Notification
-  GET_NOTIFICATION: "/notification",
-  READ_NOTIFICATION: "/notification/mark-read"
+  GET_NOTIFICATIONS: `${NOTIFICATIONS_BASE}/get-all`,
+  MARK_READ_NOTIFICATION: `${NOTIFICATIONS_BASE}/mark-read/`,
+  MARK_ALL_READ_NOTIFICATION: `${NOTIFICATIONS_BASE}/mark-all-read`,
+
+  //User
+  GET_DENTIST_PROFILE: `${USERS_BASE}/dentist-profile`
 };
 
 const ADMIN_BASE = "/admin"

@@ -15,6 +15,8 @@ interface ImportMetaEnv {
   readonly VITE_DEBUG_MODE: string
   readonly VITE_LOG_LEVEL: string
   readonly VITE_APP_VERSION: string
+  readonly VITE_ENCRYPTION_KEY: string
+  readonly VITE_AAD_CONTEXT: string
   // more env variables...
 }
 

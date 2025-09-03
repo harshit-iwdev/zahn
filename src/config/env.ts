@@ -30,6 +30,10 @@ export const env = {
   NODE_ENV: import.meta.env.MODE,
   IS_DEVELOPMENT: import.meta.env.DEV,
   IS_PRODUCTION: import.meta.env.PROD,
+
+  // Encryption key & context
+  ENCRYPTION_KEY: import.meta.env.VITE_ENCRYPTION_KEY,
+  AAD_CONTEXT: import.meta.env.VITE_AAD_CONTEXT,
 } as const;
 
 // Type for environment variables

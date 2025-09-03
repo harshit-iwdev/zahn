@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, Settings, Camera, Shield, Bell, Globe, LogOut, Trash2, Eye, EyeOff, AlertTriangle, Upload, FileText, CreditCard, Lock, Info, Building, DollarSign, Crown, Scroll, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { Button } from "./ui/button";
@@ -13,6 +13,9 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
+import { executor } from "@/http/executer";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { encryptionKey, aad_context } from "@/config/config";
 
 interface ProfileSettingsProps {
   onShowPlanUpgrade?: () => void;
@@ -25,40 +28,31 @@ interface ProfileSettingsProps {
   };
 }
 
+const IV_LENGTH = 16; // For GCM, this is 12 bytes
+const TAG_LENGTH = 16; // GCM authentication tag length
+
 export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscription }: ProfileSettingsProps) {
   const [activeTab, setActiveTab] = useState('profile');
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+  const [subscriptionData, setSubscriptionData] = useState<any>({});
+  const [userClinicData, setUserClinicData] = useState<any>({});
+  const [bankAccountData, setBankAccountData] = useState<any>({});
+
   // Legal & Policies state
   const [showTermsAndConditions, setShowTermsAndConditions] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  
-  // Profile form state
-  const [profileData, setProfileData] = useState({
-    fullName: 'Dr. Sarah Johnson',
-    clinicName: 'Downtown Dental Care',
-    speciality: ['General Dentistry', 'Cosmetic Dentistry'],
-    phone: '+1 (555) 123-4567',
-    email: 'sarah.johnson@dentalcare.com',
-    address: '123 Main Street, Suite 200\nDowntown, NY 10001',
-    approvalStatus: 'approved', // approved, pending, rejected
-    licenseUploaded: true
-  });
 
-  // Bank account state
-  const [bankAccountData, setBankAccountData] = useState({
-    accountHolderName: 'Dr. Sarah Johnson',
-    routingNumber: '123456789',
-    accountNumber: '****1234',
-    accountType: 'checking',
-    bankName: 'First National Bank'
-  });
+  // // Profile form state
+  // const profileInfo = useSelector((state: any) => state.user.loginUserData);
+  // console.log(profileInfo, "---profileInfo---41");
+  const [profileData, setProfileData] = useState<any>({});
 
   const [bankAccountError, setBankAccountError] = useState('');
   const [isBankFormValid, setIsBankFormValid] = useState(true);
-
+  const [decryptedAccountHolderName, setDecryptedAccountHolderName] = useState<string>("");
+  console.log(decryptedAccountHolderName, "---decryptedAccountHolderName---56");
   // Settings state
   const [notificationSettings, setNotificationSettings] = useState({
     emailAlerts: true,
@@ -78,32 +72,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     timezone: 'America/New_York'
   });
 
-  // Use current subscription or fallback to default
-  const subscription = currentSubscription || {
-    tier: 'tier1',
-    planName: 'Tier 1',
-    monthlyPrice: 199,
-    features: ['Basic platform access', 'Up to 5 new-patient bookings/month', 'Listed in patient-facing search']
-  };
-
-  const isTier1 = subscription.tier === 'tier1';
-
-  const getSubscriptionBenefits = () => {
-    if (isTier1) {
-      return [
-        'Basic platform access & patient search listing',
-        'Up to 5 new-patient bookings per month',
-        'Standard search ranking in patient results'
-      ];
-    } else {
-      return [
-        'Unlimited new-patient bookings & priority search',
-        'Enhanced profile with photos, videos & reviews',
-        'Direct patient messaging & advanced analytics'
-      ];
-    }
-  };
-
   const specialties = [
     'General Dentistry',
     'Cosmetic Dentistry',
@@ -114,6 +82,69 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     'Pediatric Dentistry',
     'Prosthodontics'
   ];
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  // Browser-friendly AES-GCM decryptor using Web Crypto API
+  async function decryptAesGcmBase64(encryptedBase64: string): Promise<string> {
+    const base64Key = encryptionKey;
+    const aad = aad_context;
+    // Decode inputs
+    const encryptedBytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+    const keyBytes = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+
+    const iv = encryptedBytes.subarray(0, IV_LENGTH);
+    const tag = encryptedBytes.subarray(encryptedBytes.length - TAG_LENGTH);
+    const ciphertext = encryptedBytes.subarray(IV_LENGTH, encryptedBytes.length - TAG_LENGTH);
+
+    // Web Crypto expects tag appended to ciphertext
+    const combined = new Uint8Array(ciphertext.length + tag.length);
+    combined.set(ciphertext, 0);
+    combined.set(tag, ciphertext.length);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyBytes,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv,
+        additionalData: new TextEncoder().encode(aad),
+        tagLength: 128,
+      },
+      cryptoKey,
+      combined
+    );
+
+    return new TextDecoder().decode(decrypted);
+  }
+
+  const fetchUserProfile = async () => {
+    try {
+      const url = DENTIST_ENDPOINT.GET_DENTIST_PROFILE;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const profileResponse = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && profileResponse) {
+        setProfileData(profileResponse.user);
+        setBankAccountDataFxn(profileResponse.bankAccountDetails);
+        setSubscriptionData(profileResponse.userSubscriptions);
+        setUserClinicData(profileResponse.clinic);
+      } else {
+        console.log('Failed to fetch user profile. Please try again.');
+      }
+    } catch (error) {
+      console.log('Failed to fetch user profile. Please try again.');
+    }
+  };
 
   const getApprovalStatusBadge = (status: string) => {
     switch (status) {
@@ -139,22 +170,22 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
       setBankAccountError('Please enter the account holder name');
       return;
     }
-    
+
     if (!bankAccountData.routingNumber.trim() || bankAccountData.routingNumber.length !== 9) {
       setBankAccountError('Please enter a valid 9-digit routing number');
       return;
     }
-    
+
     if (!bankAccountData.accountNumber.trim() || bankAccountData.accountNumber.length < 4) {
       setBankAccountError('Please enter a valid account number');
       return;
     }
-    
+
     if (!bankAccountData.accountType) {
       setBankAccountError('Please select an account type');
       return;
     }
-    
+
     if (!bankAccountData.bankName.trim()) {
       setBankAccountError('Please enter your bank name');
       return;
@@ -212,6 +243,19 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     setBankAccountData(prev => ({ ...prev, [field]: value }));
     setBankAccountError('');
   };
+
+  const setBankAccountDataFxn = async (dt: any) => {
+    const bank_account_holder_name = await decryptAesGcmBase64(dt.bank_account_holder_name);
+    const bank_account_number = await decryptAesGcmBase64(dt.bank_account_number);
+    const bank_account_routing_number = await decryptAesGcmBase64(dt.bank_account_routing_number);
+
+    setBankAccountData({
+      ...dt,
+      bank_account_holder_name,
+      bank_account_number,
+      bank_account_routing_number,
+    });
+  }
 
   const handleRoutingNumberChange = (value: string) => {
     // Only allow numeric input and limit to 9 digits
@@ -351,15 +395,15 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
             </TabsTrigger>
           </TabsList> */}
           <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 p-1 rounded-xl">
-            <TabsTrigger 
-              value="profile" 
+            <TabsTrigger
+              value="profile"
               className="flex items-center space-x-2 py-3 px-6 rounded-lg data-[state=active]:bg-[#433CE7] data-[state=active]:text-white transition-all"
             >
               <User className="w-5 h-5" />
               <span className="font-medium">My Profile</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
+            <TabsTrigger
+              value="settings"
               className="flex items-center space-x-2 py-3 px-6 rounded-lg data-[state=active]:bg-[#433CE7] data-[state=active]:text-white transition-all"
             >
               <Settings className="w-5 h-5" />
@@ -409,19 +453,19 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Label htmlFor="fullName" className="text-[#1E1E1E] font-medium">Full Name</Label>
                       <Input
                         id="fullName"
-                        value={profileData.fullName}
-                        onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
+                        value={profileData.user_full_name}
+                        onChange={(e) => setProfileData({ ...profileData, user_full_name: e.target.value })}
                         placeholder="Enter your full name"
                         className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       />
                     </div>
-                    
+
                     <div className="space-y-3">
                       <Label htmlFor="clinicName" className="text-[#1E1E1E] font-medium">Clinic Name</Label>
                       <Input
                         id="clinicName"
-                        value={profileData.clinicName}
-                        onChange={(e) => setProfileData({ ...profileData, clinicName: e.target.value })}
+                        value={userClinicData.clinic_name}
+                        onChange={(e) => setUserClinicData({ ...userClinicData, clinic_name: e.target.value })}
                         placeholder="Enter clinic name"
                         className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       />
@@ -431,8 +475,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Label htmlFor="phone" className="text-[#1E1E1E] font-medium">Phone Number</Label>
                       <Input
                         id="phone"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        value={profileData.user_phone}
+                        onChange={(e) => setProfileData({ ...profileData, user_phone: e.target.value })}
                         placeholder="Enter phone number"
                         className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       />
@@ -443,8 +487,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Input
                         id="email"
                         type="email"
-                        value={profileData.email}
-                        onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                        value={profileData.user_email}
+                        onChange={(e) => setProfileData({ ...profileData, user_email: e.target.value })}
                         placeholder="Enter email address"
                         className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       />
@@ -460,9 +504,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <SelectValue placeholder="Select your specialties" />
                     </SelectTrigger>
                     <SelectContent>
-                      {specialties.map((specialty) => (
-                        <SelectItem 
-                          key={specialty} 
+                      {userClinicData?.clinic_specialities?.map((specialty) => (
+                        <SelectItem
+                          key={specialty}
                           value={specialty}
                           onClick={() => handleSpecialitySelect(specialty)}
                         >
@@ -472,9 +516,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </SelectContent>
                   </Select>
                   <div className="flex flex-wrap gap-3 mt-4">
-                    {profileData.speciality.map((spec, index) => (
-                      <Badge 
-                        key={index} 
+                    {userClinicData?.clinic_specialities?.map((spec, index) => (
+                      <Badge
+                        key={index}
                         className="bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB] px-4 py-2 rounded-full font-medium"
                       >
                         {spec}
@@ -488,8 +532,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   <Label htmlFor="address" className="text-[#1E1E1E] font-medium">Clinic Address</Label>
                   <Textarea
                     id="address"
-                    value={profileData.address}
-                    onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                    value={userClinicData.clinic_address}
+                    onChange={(e) => setUserClinicData({ ...userClinicData, clinic_address: e.target.value })}
                     placeholder="Enter clinic address"
                     rows={4}
                     className="bg-[#f3f3f5] border-gray-200 rounded-lg"
@@ -533,11 +577,11 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 <div className="space-y-3">
                   <Label className="text-[#1E1E1E] font-medium">Admin Approval Status</Label>
                   <div className="flex items-center space-x-4">
-                    {getApprovalStatusBadge(profileData.approvalStatus)}
-                    {profileData.approvalStatus === 'pending' && (
+                    {getApprovalStatusBadge(profileData.user_onboarding_completed ? 'approved' : 'pending')}
+                    {profileData.user_onboarding_completed === false && (
                       <p className="text-gray-600">Your profile is under review by our admin team</p>
                     )}
-                    {profileData.approvalStatus === 'approved' && (
+                    {profileData.user_onboarding_completed === true && (
                       <p className="text-green-600">Your profile has been approved and is active</p>
                     )}
                   </div>
@@ -545,8 +589,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
                 {/* Save Button */}
                 <div className="flex justify-end pt-8 border-t border-gray-200">
-                  <Button 
-                    onClick={handleProfileSave} 
+                  <Button
+                    onClick={handleProfileSave}
                     className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-12 py-3 text-lg rounded-lg"
                   >
                     Save Changes
@@ -563,11 +607,11 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <Crown className="w-5 h-5 text-[#433CE7]" />
                   </div>
                   <span className="text-[#1E1E1E]">Your Plan</span>
-                  <Badge className={isTier1 
-                    ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB] ml-4" 
+                  <Badge className={subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1'
+                    ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB] ml-4"
                     : "bg-[#433CE7] text-white hover:bg-[#433CE7] ml-4"
                   }>
-                    {subscription.planName}
+                    {subscriptionData?.subscriptionPlan?.plan_name}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -576,10 +620,10 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 <div className="flex items-center justify-between p-6 bg-[#E5E3FB]/20 rounded-xl border border-[#433CE7]/10">
                   <div className="space-y-1">
                     <h3 className="text-xl font-bold text-[#1E1E1E]">
-                      {subscription.planName} – {isTier1 ? 'Basic Plan' : 'Premium Plan'}
+                      {subscriptionData?.subscriptionPlan?.plan_name} – {subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1' ? 'Basic Plan' : 'Premium Plan'}
                     </h3>
                     <p className="text-3xl font-bold text-[#433CE7]">
-                      ${subscription.monthlyPrice}
+                      ${subscriptionData?.subscriptionPlan?.plan_price}
                       <span className="text-base font-medium text-gray-600 ml-1">/month</span>
                     </p>
                   </div>
@@ -591,7 +635,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                         Stripe
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600">Next billing: Feb 12, 2025</p>
+                    <p className="text-sm text-gray-600">Next billing: {subscriptionData?.user_subscription_expiration_date} </p>
                   </div>
                 </div>
 
@@ -599,7 +643,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 <div className="space-y-4">
                   <h4 className="font-medium text-[#1E1E1E] text-lg">Key Benefits</h4>
                   <div className="space-y-3">
-                    {getSubscriptionBenefits().map((benefit, index) => (
+                    {subscriptionData?.subscriptionPlan?.plan_features?.map((benefit, index) => (
                       <div key={index} className="flex items-start space-x-3">
                         <div className="w-5 h-5 bg-[#433CE7] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Crown className="w-3 h-3 text-white" />
@@ -615,15 +659,15 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <Button 
+                    <Button
                       onClick={handleManagePlan}
                       className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-8 py-3 rounded-lg font-medium"
                     >
-                      {isTier1 ? 'Upgrade Plan' : 'Manage Plan'}
+                      {subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1' ? 'Upgrade Plan' : 'Manage Plan'}
                     </Button>
-                    
-                    <Button 
-                      variant="link" 
+
+                    <Button
+                      variant="link"
                       onClick={handleViewBillingHistory}
                       className="text-[#433CE7] hover:text-[#3730a3] underline font-medium"
                     >
@@ -631,7 +675,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </Button>
                   </div>
 
-                  {isTier1 && (
+                  {subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1' && (
                     <div className="text-right">
                       <p className="text-sm text-gray-600 mb-1">Want more features?</p>
                       <p className="text-sm font-medium text-[#433CE7]">
@@ -686,7 +730,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <Label htmlFor="accountHolderName" className="text-[#1E1E1E] font-medium">Account Holder Name</Label>
                     <Input
                       id="accountHolderName"
-                      value={bankAccountData.accountHolderName}
+                      value={bankAccountData?.bank_account_holder_name}
                       onChange={(e) => handleBankAccountChange('accountHolderName', e.target.value)}
                       placeholder="Enter full name as it appears on account"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
@@ -700,7 +744,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
                       <Input
                         id="bankName"
-                        value={bankAccountData.bankName}
+                        value={bankAccountData.bank_name}
                         onChange={(e) => handleBankAccountChange('bankName', e.target.value)}
                         placeholder="Enter your bank name"
                         className="pl-12 h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
@@ -715,7 +759,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       id="routingNumber"
                       type="text"
                       inputMode="numeric"
-                      value={bankAccountData.routingNumber}
+                      value={bankAccountData.bank_account_routing_number}
                       onChange={(e) => handleRoutingNumberChange(e.target.value)}
                       placeholder="9-digit routing number"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
@@ -734,7 +778,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       id="accountNumber"
                       type="text"
                       inputMode="numeric"
-                      value={bankAccountData.accountNumber}
+                      value={bankAccountData.bank_account_number}
                       onChange={(e) => handleAccountNumberChange(e.target.value)}
                       placeholder="Account number"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
@@ -744,8 +788,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   {/* Account Type */}
                   <div className="space-y-3 md:col-span-2">
                     <Label className="text-[#1E1E1E] font-medium">Account Type</Label>
-                    <Select 
-                      value={bankAccountData.accountType} 
+                    <Select
+                      value={bankAccountData.bank_account_type}
                       onValueChange={(value) => handleBankAccountChange('accountType', value)}
                     >
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
@@ -761,8 +805,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
                 {/* Save Button */}
                 <div className="flex justify-end pt-8 border-t border-gray-200">
-                  <Button 
-                    onClick={handleBankAccountSave} 
+                  <Button
+                    onClick={handleBankAccountSave}
                     className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-12 py-3 text-lg rounded-lg"
                   >
                     Save Changes
@@ -775,8 +819,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
             <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2 px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     <LogOut className="w-4 h-4" />
@@ -792,7 +836,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={handleLogout}
                       className="bg-[#433CE7] hover:bg-[#3730a3] text-white"
                     >
@@ -804,8 +848,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2 px-8 py-3 border-red-300 text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -824,7 +868,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={handleDeleteAccount}
                       className="bg-red-600 hover:bg-red-700 text-white"
                     >
@@ -857,8 +901,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </div>
                     <Switch
                       checked={notificationSettings.emailAlerts}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings({...notificationSettings, emailAlerts: checked})
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, emailAlerts: checked })
                       }
                     />
                   </div>
@@ -870,8 +914,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </div>
                     <Switch
                       checked={notificationSettings.smsAlerts}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings({...notificationSettings, smsAlerts: checked})
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, smsAlerts: checked })
                       }
                     />
                   </div>
@@ -883,8 +927,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </div>
                     <Switch
                       checked={notificationSettings.appointmentReminders}
-                      onCheckedChange={(checked) => 
-                        setNotificationSettings({...notificationSettings, appointmentReminders: checked})
+                      onCheckedChange={(checked) =>
+                        setNotificationSettings({ ...notificationSettings, appointmentReminders: checked })
                       }
                     />
                   </div>
@@ -914,7 +958,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                           id="oldPassword"
                           type={showOldPassword ? "text" : "password"}
                           value={securitySettings.oldPassword}
-                          onChange={(e) => setSecuritySettings({...securitySettings, oldPassword: e.target.value})}
+                          onChange={(e) => setSecuritySettings({ ...securitySettings, oldPassword: e.target.value })}
                           placeholder="Enter current password"
                           className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg pr-12"
                         />
@@ -935,7 +979,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                           id="newPassword"
                           type={showNewPassword ? "text" : "password"}
                           value={securitySettings.newPassword}
-                          onChange={(e) => setSecuritySettings({...securitySettings, newPassword: e.target.value})}
+                          onChange={(e) => setSecuritySettings({ ...securitySettings, newPassword: e.target.value })}
                           placeholder="Enter new password"
                           className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg pr-12"
                         />
@@ -956,7 +1000,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           value={securitySettings.confirmPassword}
-                          onChange={(e) => setSecuritySettings({...securitySettings, confirmPassword: e.target.value})}
+                          onChange={(e) => setSecuritySettings({ ...securitySettings, confirmPassword: e.target.value })}
                           placeholder="Confirm new password"
                           className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg pr-12"
                         />
@@ -971,7 +1015,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     onClick={handlePasswordChange}
                     className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-8 py-3 rounded-lg"
                   >
@@ -989,8 +1033,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   </div>
                   <Switch
                     checked={securitySettings.twoFactorAuth}
-                    onCheckedChange={(checked) => 
-                      setSecuritySettings({...securitySettings, twoFactorAuth: checked})
+                    onCheckedChange={(checked) =>
+                      setSecuritySettings({ ...securitySettings, twoFactorAuth: checked })
                     }
                   />
                 </div>
@@ -1011,7 +1055,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <Label className="text-[#1E1E1E] font-medium">Language</Label>
-                    <Select value={generalSettings.language} onValueChange={(value) => setGeneralSettings({...generalSettings, language: value})}>
+                    <Select value={generalSettings.language} onValueChange={(value) => setGeneralSettings({ ...generalSettings, language: value })}>
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
@@ -1025,7 +1069,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
                   <div className="space-y-3">
                     <Label className="text-[#1E1E1E] font-medium">Time Zone</Label>
-                    <Select value={generalSettings.timezone} onValueChange={(value) => setGeneralSettings({...generalSettings, timezone: value})}>
+                    <Select value={generalSettings.timezone} onValueChange={(value) => setGeneralSettings({ ...generalSettings, timezone: value })}>
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
@@ -1063,24 +1107,24 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-0">
                     <Collapsible open={showTermsAndConditions} onOpenChange={setShowTermsAndConditions}>
                       <CollapsibleTrigger asChild>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full flex items-center justify-between p-3 h-12 text-[#433CE7] border-[#433CE7]/20 hover:bg-[#E5E3FB]/30"
                         >
                           <span className="font-medium">
                             {showTermsAndConditions ? 'Hide Full Text' : 'Show Full Text'}
                           </span>
-                          {showTermsAndConditions ? 
-                            <ChevronUp className="w-4 h-4" /> : 
+                          {showTermsAndConditions ?
+                            <ChevronUp className="w-4 h-4" /> :
                             <ChevronDown className="w-4 h-4" />
                           }
                         </Button>
                       </CollapsibleTrigger>
-                      
+
                       <CollapsibleContent className="mt-4">
                         <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto">
                           <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed font-sans">
@@ -1107,24 +1151,24 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="pt-0">
                     <Collapsible open={showPrivacyPolicy} onOpenChange={setShowPrivacyPolicy}>
                       <CollapsibleTrigger asChild>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full flex items-center justify-between p-3 h-12 text-[#433CE7] border-[#433CE7]/20 hover:bg-[#E5E3FB]/30"
                         >
                           <span className="font-medium">
                             {showPrivacyPolicy ? 'Hide Full Text' : 'Show Full Text'}
                           </span>
-                          {showPrivacyPolicy ? 
-                            <ChevronUp className="w-4 h-4" /> : 
+                          {showPrivacyPolicy ?
+                            <ChevronUp className="w-4 h-4" /> :
                             <ChevronDown className="w-4 h-4" />
                           }
                         </Button>
                       </CollapsibleTrigger>
-                      
+
                       <CollapsibleContent className="mt-4">
                         <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto">
                           <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed font-sans">
@@ -1145,8 +1189,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <div>
                       <h4 className="font-medium text-[#1E1E1E] mb-2">ZaaN's Legal Commitment</h4>
                       <p className="text-sm text-gray-700 leading-relaxed">
-                        ZaaN is committed to maintaining the highest standards of user safety, data privacy, and regulatory compliance. 
-                        Our platform is designed with healthcare professionals in mind, ensuring that all legal and ethical standards 
+                        ZaaN is committed to maintaining the highest standards of user safety, data privacy, and regulatory compliance.
+                        Our platform is designed with healthcare professionals in mind, ensuring that all legal and ethical standards
                         are met while providing you with the tools needed to grow your practice effectively.
                       </p>
                       <p className="text-sm text-gray-700 leading-relaxed mt-3">
