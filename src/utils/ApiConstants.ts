@@ -1,5 +1,6 @@
 export const AUTH_BASE = "/api/v1/auth";
 export const ONBOARDING_BASE = "/api/v1/onboarding";
+export const BANK_ACCOUNT_BASE = "/api/v1/bank-account";
 export const APPOINTMENTS_BASE = "/api/v1/appointments";
 export const COMPANY = "/company";
 export const CART = "/cart";
@@ -16,7 +17,6 @@ export const DENTIST_ENDPOINT = {
   VERIFY_OTP: `${AUTH_BASE}/verify-otp`,
   RESET_PASSWORD: `${AUTH_BASE}/reset-password`,
   UPDATE_PROFILE: "user/profile",
-  CHANGE_PASSWORD: "/user/change-password",
 
   // Onboarding
   CLINIC: `${ONBOARDING_BASE}/clinic`,
@@ -32,6 +32,9 @@ export const DENTIST_ENDPOINT = {
   TODAY_APPOINTMENTS: `${APPOINTMENTS_BASE}/today`,
   CONFIRM_APPOINTMENT: `${APPOINTMENTS_BASE}/confirmation`,
   UPDATE_APPOINTMENT_AVAILABILITY: `${APPOINTMENTS_BASE}/set-availability`,
+
+  // Bank Account
+  UPDATE_BANK_DATA: `${ONBOARDING_BASE}/update-bank-data`,
 
   // Dashboard
   GET_DASHBOARD: `${DASHBOARD_BASE}/`,
@@ -71,7 +74,9 @@ export const DENTIST_ENDPOINT = {
   MARK_ALL_READ_NOTIFICATION: `${NOTIFICATIONS_BASE}/mark-all-read`,
 
   //User
-  GET_DENTIST_PROFILE: `${USERS_BASE}/dentist-profile`
+  GET_DENTIST_PROFILE: `${USERS_BASE}/dentist-profile`,
+  CHANGE_PASSWORD: `${USERS_BASE}/update-password`,
+
 };
 
 const ADMIN_BASE = "/admin"

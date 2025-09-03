@@ -19,24 +19,24 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
   const bankAccountOnboardingRef = useRef(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    bankAccountHolderName: '',
-    bankRoutingNumber: '',
-    bankAccountNumber: '',
-    bankAccountType: '',
-    bankName: ''
-  });
+    bank_account_holder_name: '',
+    bank_account_number: '',
+    bank_account_routing_number: '',
+    bank_account_type: '',
+    bank_name: ''
+  });  
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isFormValid = () => {
-    return formData.bankAccountHolderName.trim() &&
-           formData.bankRoutingNumber.trim() &&
-           formData.bankAccountNumber.trim() &&
-           formData.bankAccountType &&
-           formData.bankName.trim() &&
-           formData.bankRoutingNumber.length === 9 &&
-           formData.bankAccountNumber.length >= 4;
+    return formData.bank_account_holder_name.trim() &&
+           formData.bank_account_routing_number.trim() &&
+           formData.bank_account_number.trim() &&
+           formData.bank_account_type &&
+           formData.bank_name.trim() &&
+           formData.bank_account_routing_number.length === 9 &&
+           formData.bank_account_number.length >= 4;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -59,27 +59,27 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.bankAccountHolderName.trim()) {
+    if (!formData.bank_account_holder_name.trim()) {
       setError('Please enter the account holder name');
       return;
     }
     
-    if (!formData.bankRoutingNumber.trim() || formData.bankRoutingNumber.length !== 9) {
+    if (!formData.bank_account_routing_number.trim() || formData.bank_account_routing_number.length !== 9) {
       setError('Please enter a valid 9-digit routing number');
       return;
     }
     
-    if (!formData.bankAccountNumber.trim() || formData.bankAccountNumber.length < 4) {
+    if (!formData.bank_account_number.trim() || formData.bank_account_number.length < 4) {
       setError('Please enter a valid account number');
       return;
     }
     
-    if (!formData.bankAccountType) {
+    if (!formData.bank_account_type) {
       setError('Please select an account type');
       return;
     }
     
-    if (!formData.bankName.trim()) {
+    if (!formData.bank_name.trim()) {
       setError('Please enter your bank name');
       return;
     }
@@ -155,8 +155,8 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
                   <Input
                     id="accountHolderName"
                     type="text"
-                    value={formData.bankAccountHolderName}
-                    onChange={(e) => handleInputChange('bankAccountHolderName', e.target.value)}
+                    value={formData.bank_account_holder_name}
+                    onChange={(e) => handleInputChange('bank_account_holder_name', e.target.value)}
                     placeholder="Enter full name as it appears on your account"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="name"
@@ -174,7 +174,7 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
                     id="routingNumber"
                     type="text"
                     inputMode="numeric"
-                    value={formData.bankRoutingNumber}
+                    value={formData.bank_account_routing_number}
                     onChange={(e) => handleRoutingNumberChange(e.target.value)}
                     placeholder="9-digit routing number"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
@@ -197,7 +197,7 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
                     id="accountNumber"
                     type="text"
                     inputMode="numeric"
-                    value={formData.bankAccountNumber}
+                    value={formData.bank_account_number}
                     onChange={(e) => handleAccountNumberChange(e.target.value)}
                     placeholder="Enter your account number"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
@@ -214,7 +214,7 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
                 <Label className="text-foreground">
                   Account Type *
                 </Label>
-                <Select value={formData.bankAccountType} onValueChange={(value) => handleInputChange('bankAccountType', value)}>
+                <Select value={formData.bank_account_type} onValueChange={(value) => handleInputChange('bank_account_type', value)}>
                   <SelectTrigger className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1">
                     <SelectValue placeholder="Select account type" />
                   </SelectTrigger>
@@ -245,8 +245,8 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
                   <Input
                     id="bankName"
                     type="text"
-                    value={formData.bankName}
-                    onChange={(e) => handleInputChange('bankName', e.target.value)}
+                    value={formData.bank_name}
+                    onChange={(e) => handleInputChange('bank_name', e.target.value)}
                     placeholder="Enter your bank name"
                     className="pl-12 h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="organization"

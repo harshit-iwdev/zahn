@@ -14,7 +14,7 @@ import { Separator } from "./ui/separator";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { executor } from "@/http/executer";
-import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { BANK_ACCOUNT_BASE, DENTIST_ENDPOINT, ONBOARDING_BASE } from "@/utils/ApiConstants";
 import { encryptionKey, aad_context } from "@/config/config";
 
 interface ProfileSettingsProps {
@@ -45,14 +45,10 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
   // // Profile form state
-  // const profileInfo = useSelector((state: any) => state.user.loginUserData);
-  // console.log(profileInfo, "---profileInfo---41");
   const [profileData, setProfileData] = useState<any>({});
 
   const [bankAccountError, setBankAccountError] = useState('');
-  const [isBankFormValid, setIsBankFormValid] = useState(true);
-  const [decryptedAccountHolderName, setDecryptedAccountHolderName] = useState<string>("");
-  console.log(decryptedAccountHolderName, "---decryptedAccountHolderName---56");
+
   // Settings state
   const [notificationSettings, setNotificationSettings] = useState({
     emailAlerts: true,
@@ -142,7 +138,7 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
         console.log('Failed to fetch user profile. Please try again.');
       }
     } catch (error) {
-      console.log('Failed to fetch user profile. Please try again.');
+      console.error('Failed to fetch user profile. Please try again.');
     }
   };
 
@@ -164,29 +160,29 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     // Implement save logic here
   };
 
-  const handleBankAccountSave = () => {
+  const handleBankAccountSave = async () => {
     // Validate bank account data
-    if (!bankAccountData.accountHolderName.trim()) {
+    if (!bankAccountData.bank_account_holder_name.trim()) {
       setBankAccountError('Please enter the account holder name');
       return;
     }
 
-    if (!bankAccountData.routingNumber.trim() || bankAccountData.routingNumber.length !== 9) {
+    if (!bankAccountData.bank_account_routing_number.trim() || bankAccountData.bank_account_routing_number.length !== 9) {
       setBankAccountError('Please enter a valid 9-digit routing number');
       return;
     }
 
-    if (!bankAccountData.accountNumber.trim() || bankAccountData.accountNumber.length < 4) {
+    if (!bankAccountData.bank_account_number.trim() || bankAccountData.bank_account_number.length < 4) {
       setBankAccountError('Please enter a valid account number');
       return;
     }
 
-    if (!bankAccountData.accountType) {
+    if (!bankAccountData.bank_account_type) {
       setBankAccountError('Please select an account type');
       return;
     }
 
-    if (!bankAccountData.bankName.trim()) {
+    if (!bankAccountData.bank_name.trim()) {
       setBankAccountError('Please enter your bank name');
       return;
     }
@@ -194,21 +190,48 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     setBankAccountError('');
     console.log('Saving bank account data:', bankAccountData);
     // Implement save logic here
+
+    const url = DENTIST_ENDPOINT.UPDATE_BANK_DATA;
+    const exe = executor("put", url);
+    const body = {
+      bank_account_holder_name: bankAccountData.bank_account_holder_name,
+      bank_account_number: bankAccountData.bank_account_number,
+      bank_account_routing_number: bankAccountData.bank_account_routing_number,
+      bank_account_type: bankAccountData.bank_account_type,
+      bank_name: bankAccountData.bank_name,
+    }
+    const axiosResponse = await exe.execute(body);
+    if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.data.success) {
+      setBankAccountDataFxn(axiosResponse.data.data);
+    } else {
+      console.error('Failed to save bank account data');
+    }
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (securitySettings.newPassword !== securitySettings.confirmPassword) {
       alert('New passwords do not match');
       return;
     }
-    console.log('Changing password');
-    // Implement password change logic here
-    setSecuritySettings({
-      ...securitySettings,
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+
+    const url = DENTIST_ENDPOINT.CHANGE_PASSWORD;
+    const exe = executor("post", url);
+    const body = {
+      oldPassword: securitySettings.oldPassword,
+      newPassword: securitySettings.newPassword,
+      confirmPassword: securitySettings.confirmPassword
+    }
+    const axiosResponse = await exe.execute(body);
+    if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.success) {
+      setSecuritySettings({
+        ...securitySettings,
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } else {
+      console.log('Failed to change password');
+    }
   };
 
   const handleLogout = () => {
@@ -218,7 +241,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   };
 
   const handleDeleteAccount = () => {
-    console.log('Deleting account');
     // Implement account deletion logic here
     if (onLogout) {
       onLogout(); // Log out after deleting account
@@ -239,7 +261,7 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     }
   };
 
-  const handleBankAccountChange = (field: string, value: string) => {
+  const handleBankAccountDataChange = (field: string, value: string) => {
     setBankAccountData(prev => ({ ...prev, [field]: value }));
     setBankAccountError('');
   };
@@ -257,17 +279,25 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     });
   }
 
-  const handleRoutingNumberChange = (value: string) => {
-    // Only allow numeric input and limit to 9 digits
-    const numericValue = value.replace(/\D/g, '').slice(0, 9);
-    handleBankAccountChange('routingNumber', numericValue);
-  };
+  const maskedString = (str: string) => {
+    if (!str || str.length === 0) return '';
+    if (str.length <= 4) return str;
+    const visible = str.slice(-4);
+    const masked = '*'.repeat(str.length - 4);
+    return masked + visible;
+  }
 
-  const handleAccountNumberChange = (value: string) => {
-    // Only allow numeric input and limit to reasonable length
-    const numericValue = value.replace(/\D/g, '').slice(0, 17);
-    handleBankAccountChange('accountNumber', numericValue);
-  };
+  // const handleRoutingNumberChange = (value: string) => {
+  //   // Only allow numeric input and limit to 9 digits
+  //   const numericValue = value.replace(/\D/g, '').slice(0, 9);
+  //   handleBankAccountDataChange('routingNumber', numericValue);
+  // };
+
+  // const handleAccountNumberChange = (value: string) => {
+  //   // Only allow numeric input and limit to reasonable length
+  //   const numericValue = value.replace(/\D/g, '').slice(0, 17);
+  //   handleBankAccountDataChange('accountNumber', numericValue);
+  // };
 
   const handleManagePlan = () => {
     if (onShowPlanUpgrade) {
@@ -731,7 +761,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <Input
                       id="accountHolderName"
                       value={bankAccountData?.bank_account_holder_name}
-                      onChange={(e) => handleBankAccountChange('accountHolderName', e.target.value)}
+                      onChange={(e) => handleBankAccountDataChange('bank_account_holder_name', e.target.value)}
                       placeholder="Enter full name as it appears on account"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                     />
@@ -745,9 +775,10 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Input
                         id="bankName"
                         value={bankAccountData.bank_name}
-                        onChange={(e) => handleBankAccountChange('bankName', e.target.value)}
+                        onChange={(e) => handleBankAccountDataChange('bank_name', e.target.value)}
                         placeholder="Enter your bank name"
                         className="pl-12 h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
+                        maxLength={20}
                       />
                     </div>
                   </div>
@@ -759,8 +790,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       id="routingNumber"
                       type="text"
                       inputMode="numeric"
-                      value={bankAccountData.bank_account_routing_number}
-                      onChange={(e) => handleRoutingNumberChange(e.target.value)}
+                      value={maskedString(bankAccountData.bank_account_routing_number)}
+                      onChange={(e) => handleBankAccountDataChange('bank_account_routing_number', e.target.value)}
                       placeholder="9-digit routing number"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       maxLength={9}
@@ -778,8 +809,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       id="accountNumber"
                       type="text"
                       inputMode="numeric"
-                      value={bankAccountData.bank_account_number}
-                      onChange={(e) => handleAccountNumberChange(e.target.value)}
+                      value={maskedString(bankAccountData.bank_account_number)}
+                      onChange={(e) => handleBankAccountDataChange('bank_account_number', e.target.value)}
                       placeholder="Account number"
                       className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                     />
@@ -790,7 +821,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <Label className="text-[#1E1E1E] font-medium">Account Type</Label>
                     <Select
                       value={bankAccountData.bank_account_type}
-                      onValueChange={(value) => handleBankAccountChange('accountType', value)}
+                      onValueChange={(value) => handleBankAccountDataChange('bank_account_type', value)}
                     >
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
                         <SelectValue placeholder="Select account type" />
