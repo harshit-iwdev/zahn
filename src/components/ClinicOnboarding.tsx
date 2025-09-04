@@ -33,9 +33,9 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
   const clinicOnboardingRef = useRef(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    clinicName: '',
-    clinicAddress: '',
-    doctorSpecialities: [] as string[]
+    clinic_name: '',
+    clinic_address: '',
+    doctor_specialities: [] as string[]
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -43,9 +43,9 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isFormValid = () => {
-    return formData.clinicName.trim() &&
-      formData.clinicAddress.trim() &&
-      formData.doctorSpecialities.length > 0;
+    return formData.clinic_name.trim() &&
+      formData.clinic_address.trim() &&
+      formData.doctor_specialities.length > 0;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -56,9 +56,9 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
   const handleSpecialtyToggle = (specialty: string) => {
     setFormData(prev => ({
       ...prev,
-      doctorSpecialities: prev.doctorSpecialities.includes(specialty)
-        ? prev.doctorSpecialities.filter(s => s !== specialty)
-        : [...prev.doctorSpecialities, specialty]
+      doctor_specialities: prev.doctor_specialities.includes(specialty)
+        ? prev.doctor_specialities.filter(s => s !== specialty)
+        : [...prev.doctor_specialities, specialty]
     }));
     setError('');
   };
@@ -66,24 +66,24 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
   const removeSpecialty = (specialty: string) => {
     setFormData(prev => ({
       ...prev,
-      doctorSpecialities: prev.doctorSpecialities.filter(s => s !== specialty)
+      doctor_specialities: prev.doctor_specialities.filter(s => s !== specialty)
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.clinicName.trim()) {
+    if (!formData.clinic_name.trim()) {
       setError('Please enter your clinic name');
       return;
     }
 
-    if (!formData.clinicAddress.trim()) {
+    if (!formData.clinic_address.trim()) {
       setError('Please enter your clinic address');
       return;
     }
 
-    if (formData.doctorSpecialities.length === 0) {
+    if (formData.doctor_specialities.length === 0) {
       setError('Please select at least one specialty');
       return;
     }
@@ -148,8 +148,8 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
                   <Input
                     id="clinicName"
                     type="text"
-                    value={formData.clinicName}
-                    onChange={(e) => handleInputChange('clinicName', e.target.value)}
+                    value={formData.clinic_name}
+                    onChange={(e) => handleInputChange('clinic_name', e.target.value)}
                     placeholder="Enter your clinic or practice name"
                     className="pl-12 h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="organization"
@@ -167,8 +167,8 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
                   <Input
                     id="clinicAddress"
                     type="text"
-                    value={formData.clinicAddress}
-                    onChange={(e) => handleInputChange('clinicAddress', e.target.value)}
+                    value={formData.clinic_address}
+                    onChange={(e) => handleInputChange('clinic_address', e.target.value)}
                     placeholder="Enter your clinic address"
                     className="pl-12 h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="street-address"
@@ -183,9 +183,9 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
                 </Label>
 
                 {/* Selected Specialties */}
-                {formData.doctorSpecialities.length > 0 && (
+                {formData.doctor_specialities.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.doctorSpecialities.map(specialty => (
+                    {formData.doctor_specialities.map(specialty => (
                       <div
                         key={specialty}
                         className="bg-[#E5E3FB] text-[#433CE7] px-3 py-1 rounded-lg flex items-center gap-2 text-sm"
@@ -212,10 +212,10 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                       className="w-full pl-12 pr-12 h-14 bg-input-background border border-border rounded-xl text-left flex items-center justify-between hover:border-[#433CE7] focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     >
-                      <span className={formData.doctorSpecialities.length === 0 ? "text-muted-foreground" : "text-foreground"}>
-                        {formData.doctorSpecialities.length === 0
+                      <span className={formData.doctor_specialities.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                        {formData.doctor_specialities.length === 0
                           ? "Select your specialties"
-                          : `${formData.doctorSpecialities.length} specialt${formData.doctorSpecialities.length === 1 ? 'y' : 'ies'} selected`
+                          : `${formData.doctor_specialities.length} specialt${formData.doctor_specialities.length === 1 ? 'y' : 'ies'} selected`
                         }
                       </span>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -233,7 +233,7 @@ export function ClinicOnboarding({ onComplete }: ClinicOnboardingProps) {
                           className="w-full px-4 py-3 text-left hover:bg-[#E5E3FB] transition-colors flex items-center justify-between group"
                         >
                           <span className="text-foreground">{specialty}</span>
-                          {formData.doctorSpecialities.includes(specialty) && (
+                          {formData.doctor_specialities.includes(specialty) && (
                             <Check className="w-4 h-4 text-[#433CE7]" />
                           )}
                         </button>

@@ -10,6 +10,7 @@ import { executor } from "@/http/executer/index";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { ROUTES } from "@/routes";
 import { useNavigate } from "react-router-dom";
+import { generateHashValue } from "@/http/encryption";
 
 interface BankAccountOnboardingProps {
   onComplete: (bankData: any) => void;
@@ -91,8 +92,14 @@ export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps
       // calling bank account onboarding API
       const url = DENTIST_ENDPOINT.BANK_ACCOUNT;
       const exe = executor("post", url);
-      bankAccountOnboardingRef.current = exe;
-      const response = await bankAccountOnboardingRef.current.execute(formData);
+      const body = {
+        bank_account_holder_name: await generateHashValue(formData.bank_account_holder_name),
+        bank_account_number: await generateHashValue(formData.bank_account_number),
+        bank_account_routing_number: await generateHashValue(formData.bank_account_routing_number),
+        bank_account_type: formData.bank_account_type,
+        bank_name: await generateHashValue(formData.bank_name),
+      }
+      const response = await exe.execute(body);
       console.log(response);
       console.log('Bank account data:', formData);
       const responseData = response.data;

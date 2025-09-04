@@ -14,8 +14,8 @@ import { Separator } from "./ui/separator";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 import { executor } from "@/http/executer";
-import { BANK_ACCOUNT_BASE, DENTIST_ENDPOINT, ONBOARDING_BASE } from "@/utils/ApiConstants";
-import { encryptionKey, aad_context } from "@/config/config";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { decryptAesGcmBase64, generateHashValue } from "@/http/encryption";
 
 interface ProfileSettingsProps {
   onShowPlanUpgrade?: () => void;
@@ -27,9 +27,6 @@ interface ProfileSettingsProps {
     features: string[];
   };
 }
-
-const IV_LENGTH = 16; // For GCM, this is 12 bytes
-const TAG_LENGTH = 16; // GCM authentication tag length
 
 export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscription }: ProfileSettingsProps) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -48,6 +45,7 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   const [profileData, setProfileData] = useState<any>({});
 
   const [bankAccountError, setBankAccountError] = useState('');
+  const [profileError, setProfileError] = useState('');
 
   // Settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -83,45 +81,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     fetchUserProfile();
   }, []);
 
-  // Browser-friendly AES-GCM decryptor using Web Crypto API
-  async function decryptAesGcmBase64(encryptedBase64: string): Promise<string> {
-    const base64Key = encryptionKey;
-    const aad = aad_context;
-    // Decode inputs
-    const encryptedBytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
-    const keyBytes = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
-
-    const iv = encryptedBytes.subarray(0, IV_LENGTH);
-    const tag = encryptedBytes.subarray(encryptedBytes.length - TAG_LENGTH);
-    const ciphertext = encryptedBytes.subarray(IV_LENGTH, encryptedBytes.length - TAG_LENGTH);
-
-    // Web Crypto expects tag appended to ciphertext
-    const combined = new Uint8Array(ciphertext.length + tag.length);
-    combined.set(ciphertext, 0);
-    combined.set(tag, ciphertext.length);
-
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyBytes,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv,
-        additionalData: new TextEncoder().encode(aad),
-        tagLength: 128,
-      },
-      cryptoKey,
-      combined
-    );
-
-    return new TextDecoder().decode(decrypted);
-  }
-
   const fetchUserProfile = async () => {
     try {
       const url = DENTIST_ENDPOINT.GET_DENTIST_PROFILE;
@@ -155,9 +114,63 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     }
   };
 
-  const handleProfileSave = () => {
+  const handleProfileSave = async () => {
     console.log('Saving profile data:', profileData);
     // Implement save logic here
+
+    // Validate bank account data
+    if (!profileData.user_full_name.trim()) {
+      setProfileError('Please enter the full name');
+      return;
+    }
+
+    if (!userClinicData.clinic_name.trim()) {
+      setProfileError('Please enter the clinic name');
+      return;
+    }
+
+    if (!profileData.user_phone_number.trim()) {
+      setProfileError('Please enter the phone number');
+      return;
+    }
+
+    if (!profileData.user_profile_photo.trim()) {
+      setProfileError('Please enter the profile photo');
+      return;
+    }
+
+    if (!userClinicData.clinic_address.trim()) {
+      setProfileError('Please enter the clinic address');
+      return;
+    }
+
+    if (!userClinicData.doctor_specialities || userClinicData.doctor_specialities.length === 0) {
+      setProfileError('Please select the doctor specialities');
+      return;
+    }
+
+    setProfileError('');
+    console.log('Saving profile data:', profileData);
+    // Implement save logic here
+
+    const url = DENTIST_ENDPOINT.UPDATE_USER_PROFILE;
+    const exe = executor("put", url);
+    const body = {
+      user_full_name: profileData.user_full_name,
+      user_email: profileData.user_email,
+      user_phone_number: profileData.user_phone_number,
+      user_profile_photo: profileData.user_profile_photo,
+      clinic_name: userClinicData.clinic_name,
+      clinic_address: userClinicData.clinic_address,
+      doctor_specialities: userClinicData.doctor_specialities,
+    }
+    const axiosResponse = await exe.execute(body);
+    if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.data.success) {
+      setProfileData(axiosResponse.data.data.user);
+      setUserClinicData(axiosResponse.data.data.clinic);
+    } else {
+      console.error('Failed to save bank account data');
+    }
   };
 
   const handleBankAccountSave = async () => {
@@ -194,12 +207,14 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     const url = DENTIST_ENDPOINT.UPDATE_BANK_DATA;
     const exe = executor("put", url);
     const body = {
-      bank_account_holder_name: bankAccountData.bank_account_holder_name,
-      bank_account_number: bankAccountData.bank_account_number,
-      bank_account_routing_number: bankAccountData.bank_account_routing_number,
+      bank_account_holder_name: await generateHashValue(bankAccountData.bank_account_holder_name),
+      bank_account_number: await generateHashValue(bankAccountData.bank_account_number),
+      bank_account_routing_number: await generateHashValue(bankAccountData.bank_account_routing_number),
       bank_account_type: bankAccountData.bank_account_type,
-      bank_name: bankAccountData.bank_name,
+      bank_name: await generateHashValue(bankAccountData.bank_name),
     }
+
+    console.log('Saving bank account data:', body);
     const axiosResponse = await exe.execute(body);
     if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.data.success) {
       setBankAccountDataFxn(axiosResponse.data.data);
@@ -248,15 +263,15 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   };
 
   const handleSpecialitySelect = (specialty: string) => {
-    if (profileData.speciality.includes(specialty)) {
-      setProfileData({
-        ...profileData,
-        speciality: profileData.speciality.filter(s => s !== specialty)
+    if (userClinicData.doctor_specialities.includes(specialty)) {
+      setUserClinicData({
+        ...userClinicData,
+        doctor_specialities: userClinicData.doctor_specialities.filter(s => s !== specialty)
       });
     } else {
-      setProfileData({
-        ...profileData,
-        speciality: [...profileData.speciality, specialty]
+      setUserClinicData({
+        ...userClinicData,
+        doctor_specialities: [...userClinicData.doctor_specialities, specialty]
       });
     }
   };
@@ -270,12 +285,14 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     const bank_account_holder_name = await decryptAesGcmBase64(dt.bank_account_holder_name);
     const bank_account_number = await decryptAesGcmBase64(dt.bank_account_number);
     const bank_account_routing_number = await decryptAesGcmBase64(dt.bank_account_routing_number);
+    const bank_name = await decryptAesGcmBase64(dt.bank_name);
 
     setBankAccountData({
       ...dt,
       bank_account_holder_name,
       bank_account_number,
       bank_account_routing_number,
+      bank_name,
     });
   }
 
@@ -505,8 +522,8 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <Label htmlFor="phone" className="text-[#1E1E1E] font-medium">Phone Number</Label>
                       <Input
                         id="phone"
-                        value={profileData.user_phone}
-                        onChange={(e) => setProfileData({ ...profileData, user_phone: e.target.value })}
+                        value={profileData.user_phone_number}
+                        onChange={(e) => setProfileData({ ...profileData, user_phone_number: e.target.value })}
                         placeholder="Enter phone number"
                         className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg"
                       />
@@ -534,7 +551,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <SelectValue placeholder="Select your specialties" />
                     </SelectTrigger>
                     <SelectContent>
-                      {userClinicData?.clinic_specialities?.map((specialty) => (
+                      {specialties.map((specialty) => (
                         <SelectItem
                           key={specialty}
                           value={specialty}
@@ -546,7 +563,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     </SelectContent>
                   </Select>
                   <div className="flex flex-wrap gap-3 mt-4">
-                    {userClinicData?.clinic_specialities?.map((spec, index) => (
+                    {userClinicData?.doctor_specialities?.map((spec, index) => (
                       <Badge
                         key={index}
                         className="bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB] px-4 py-2 rounded-full font-medium"
@@ -689,12 +706,12 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <Button
-                      onClick={handleManagePlan}
-                      className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-8 py-3 rounded-lg font-medium"
-                    >
-                      {subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1' ? 'Upgrade Plan' : 'Manage Plan'}
-                    </Button>
+                    {subscriptionData?.subscriptionPlan?.plan_name === 'Tier 1' && (
+                      <Button
+                        onClick={onShowPlanUpgrade}
+                        className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-8 py-3 rounded-lg font-medium"
+                      >Upgrade Plan</Button>
+                    )}
 
                     <Button
                       variant="link"

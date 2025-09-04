@@ -32,9 +32,13 @@ export const DENTIST_ENDPOINT = {
   TODAY_APPOINTMENTS: `${APPOINTMENTS_BASE}/today`,
   CONFIRM_APPOINTMENT: `${APPOINTMENTS_BASE}/confirmation`,
   UPDATE_APPOINTMENT_AVAILABILITY: `${APPOINTMENTS_BASE}/set-availability`,
+  GET_BOOKINGS_BY_PARAMETERS: `${APPOINTMENTS_BASE}/bookings-by-date-range`,
 
   // Bank Account
   UPDATE_BANK_DATA: `${ONBOARDING_BASE}/update-bank-data`,
+
+  // User Profile
+  UPDATE_USER_PROFILE: `${ONBOARDING_BASE}/update-user-details`,
 
   // Dashboard
   GET_DASHBOARD: `${DASHBOARD_BASE}/`,
