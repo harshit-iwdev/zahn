@@ -15,7 +15,7 @@ import { MyBookings } from '../components/MyBookings';
 import { Notifications } from '../components/Notifications';
 import { EarningsSummary } from '../components/EarningsSummary';
 import { ProfileSettings } from '../components/ProfileSettings';
-import { PlanUpgrade } from '../components/PlanUpgrade';
+// import { PlanUpgrade } from '../components/PlanUpgrade';
 
 // Props interfaces for route components
 export interface RouteComponentProps {
@@ -138,9 +138,10 @@ export const createProfileSettingsRoute = (props: RouteComponentProps) => (
 );
 
 export const createPlanUpgradeRoute = (props: RouteComponentProps) => (
-    <PlanUpgrade
-        onUpgrade={props.onPlanUpgradeComplete!}
-        onBack={props.onPlanUpgradeBack!}
-        currentPlan={props.currentSubscription!}
-    />
+    // <PlanUpgrade
+    //     onUpgrade={props.onPlanUpgradeComplete!}
+    //     onBack={props.onPlanUpgradeBack!}
+    //     currentPlan={props.currentSubscription!}
+    // />
+    <></>
 ); 
