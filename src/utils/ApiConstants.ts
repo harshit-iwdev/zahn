@@ -34,6 +34,9 @@ export const DENTIST_ENDPOINT = {
   UPDATE_APPOINTMENT_AVAILABILITY: `${APPOINTMENTS_BASE}/set-availability`,
   GET_BOOKINGS_BY_PARAMETERS: `${APPOINTMENTS_BASE}/bookings-by-date-range`,
 
+  // Dentist Availability Schedule
+  GET_DENTIST_AVAILABILITY_SCHEDULE: `${USERS_BASE}/availability-schedule`,
+
   // Bank Account
   UPDATE_BANK_DATA: `${ONBOARDING_BASE}/update-bank-data`,
 

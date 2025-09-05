@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
@@ -7,11 +7,30 @@ import { BlockedDates } from "./BlockedDates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { CalendarDays, Clock } from "lucide-react";
 import { WeeklyAvailability } from "./WeeklyAvailability";
+import { executor } from "@/http/executer";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 
 export function CalendarAvailability() {
   const [isGoogleSyncEnabled, setIsGoogleSyncEnabled] = useState(true);
   const [isAppleSyncEnabled, setIsAppleSyncEnabled] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [availabilitySchedule, setAvailabilitySchedule] = useState<any>([]);
+
+  useEffect(() => {
+    fetchDentistAvailabilitySchedule();
+  }, []);
+
+  const fetchDentistAvailabilitySchedule = async () => {
+    try {
+      const url = DENTIST_ENDPOINT.GET_DENTIST_AVAILABILITY_SCHEDULE;
+      const exe = executor("get", url);
+      const response = await exe.execute();
+      console.log("response", response);
+      setAvailabilitySchedule(response.data.data.general_schedule);
+    } catch (error) {
+      console.log("error", error);
+    }
+  };
 
   const handleSaveAvailability = () => {
     // Handle save availability logic
