@@ -51,8 +51,8 @@ export default function OnboardingPage() {
         subscription: {
             plan_id: '',
             plan_name: '',
-            plan_price: 0,
-            plan_duration: 0,
+            plan_price: 199,
+            plan_duration: 'month',
             plan_duration_type: '',
             plan_features: [],
         },
@@ -82,26 +82,21 @@ export default function OnboardingPage() {
         setShowPlanUpgrade(true);
     };
 
-    const handlePlanUpgradeComplete = () => {
-        // Update user's subscription to Tier 2
-        setProfileData(prev => ({
-            ...prev,
-            subscription: {
-                tier: 'tier2',
-                planName: 'Tier 2',
-                monthlyPrice: 599,
-                features: [
-                    'Unlimited new-patient bookings',
-                    'Priority search ranking',
-                    'Enhanced profile with photos & videos',
-                    'Direct patient messaging',
-                    'Advanced analytics & insights',
-                    'Premium customer support'
-                ]
-            }
-        }));
-        setShowPlanUpgrade(false);
-    };
+    // const handlePlanUpgradeComplete = () => {
+    //     // Update user's subscription to Tier 2
+    //     setProfileData(prev => ({
+    //         ...prev,
+    //         subscription: {
+    //             plan_id: '2',
+    //             plan_name: 'Tier 2',
+    //             plan_price: 599,
+    //             plan_duration: 0,
+    //             plan_duration_type: '',
+    //             plan_features: [],
+    //         }
+    //     }));
+    //     setShowPlanUpgrade(false);
+    // };
 
     const handlePlanUpgradeBack = () => {
         setShowPlanUpgrade(false);
@@ -332,9 +327,9 @@ export default function OnboardingPage() {
         <AuthenticatedLayout
             onLogout={handleLogout}
             onShowPlanUpgrade={handleShowPlanUpgrade}
-            currentSubscription={profileData.subscription}
+            // currentSubscription={profileData.subscription}
             showPlanUpgrade={showPlanUpgrade}
-            onPlanUpgradeComplete={handlePlanUpgradeComplete}
+            // onPlanUpgradeComplete={handlePlanUpgradeComplete}
             onPlanUpgradeBack={handlePlanUpgradeBack}
         />
     );
