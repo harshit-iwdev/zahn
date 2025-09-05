@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User, Settings, Camera, Shield, Bell, Globe, LogOut, Trash2, Eye, EyeOff, AlertTriangle, Upload, FileText, CreditCard, Lock, Info, Building, DollarSign, Crown, Scroll, ChevronDown, ChevronUp } from "lucide-react";
+import { User, Settings, Camera, Shield, Bell, Globe, LogOut, Trash2, Eye, EyeOff, AlertTriangle, Upload, FileText, CreditCard, Lock, Info, Building, DollarSign, Crown, Scroll, ChevronDown, ChevronUp, Save } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { executor } from "@/http/executer";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { decryptAesGcmBase64, generateHashValue } from "@/http/encryption";
+import { PlanUpgrade } from "./PlanUpgrade";
 
 interface ProfileSettingsProps {
   onShowPlanUpgrade?: () => void;
@@ -28,7 +29,7 @@ interface ProfileSettingsProps {
   };
 }
 
-export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscription }: ProfileSettingsProps) {
+export function ProfileSettings({ onLogout, currentSubscription }: ProfileSettingsProps) {
   const [activeTab, setActiveTab] = useState('profile');
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -36,6 +37,8 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   const [subscriptionData, setSubscriptionData] = useState<any>({});
   const [userClinicData, setUserClinicData] = useState<any>({});
   const [bankAccountData, setBankAccountData] = useState<any>({});
+  const [generalSettings, setGeneralSettings] = useState<any>({});
+  const [showAvailablePlans, setShowAvailablePlans] = useState(false);
 
   // Legal & Policies state
   const [showTermsAndConditions, setShowTermsAndConditions] = useState(false);
@@ -47,24 +50,12 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   const [bankAccountError, setBankAccountError] = useState('');
   const [profileError, setProfileError] = useState('');
 
-  // Settings state
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailAlerts: true,
-    smsAlerts: false,
-    appointmentReminders: true
-  });
-
   const [securitySettings, setSecuritySettings] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
-    twoFactorAuth: false
   });
 
-  const [generalSettings, setGeneralSettings] = useState({
-    language: 'en',
-    timezone: 'America/New_York'
-  });
 
   const specialties = [
     'General Dentistry',
@@ -93,6 +84,7 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
         setBankAccountDataFxn(profileResponse.bankAccountDetails);
         setSubscriptionData(profileResponse.userSubscriptions);
         setUserClinicData(profileResponse.clinic);
+        setGeneralSettings(profileResponse.userSettings);
       } else {
         console.log('Failed to fetch user profile. Please try again.');
       }
@@ -115,9 +107,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
   };
 
   const handleProfileSave = async () => {
-    console.log('Saving profile data:', profileData);
-    // Implement save logic here
-
     // Validate bank account data
     if (!profileData.user_full_name.trim()) {
       setProfileError('Please enter the full name');
@@ -150,8 +139,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     }
 
     setProfileError('');
-    console.log('Saving profile data:', profileData);
-    // Implement save logic here
 
     const url = DENTIST_ENDPOINT.UPDATE_USER_PROFILE;
     const exe = executor("put", url);
@@ -201,8 +188,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     }
 
     setBankAccountError('');
-    console.log('Saving bank account data:', bankAccountData);
-    // Implement save logic here
 
     const url = DENTIST_ENDPOINT.UPDATE_BANK_DATA;
     const exe = executor("put", url);
@@ -214,7 +199,6 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
       bank_name: await generateHashValue(bankAccountData.bank_name),
     }
 
-    console.log('Saving bank account data:', body);
     const axiosResponse = await exe.execute(body);
     if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.data.success) {
       setBankAccountDataFxn(axiosResponse.data.data);
@@ -246,6 +230,29 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
       });
     } else {
       console.log('Failed to change password');
+    }
+  };
+
+  const handleGeneralSettingsSave = async () => {
+    try {
+      const url = DENTIST_ENDPOINT.CHANGE_GENERAL_SETTINGS;
+      const exe = executor("put", url);
+      const body = {
+        user_language: generalSettings.user_language,
+        time_zone: generalSettings.time_zone,
+        email_alerts: generalSettings.email_alerts,
+        sms_alerts: generalSettings.sms_alerts,
+        appointment_reminders: generalSettings.appointment_reminders,
+        mfa_auth: generalSettings.mfa_auth
+      }
+      const axiosResponse = await exe.execute(body);
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.success) {
+        setGeneralSettings(axiosResponse.data.data);
+      } else {
+        console.log('Failed to change general settings');
+      }
+    } catch (error) {
+      console.error(error)
     }
   };
 
@@ -304,22 +311,13 @@ export function ProfileSettings({ onShowPlanUpgrade, onLogout, currentSubscripti
     return masked + visible;
   }
 
-  // const handleRoutingNumberChange = (value: string) => {
-  //   // Only allow numeric input and limit to 9 digits
-  //   const numericValue = value.replace(/\D/g, '').slice(0, 9);
-  //   handleBankAccountDataChange('routingNumber', numericValue);
-  // };
+  const onShowPlanUpgrade = () => {
+    setShowAvailablePlans(true);
+  };
 
-  // const handleAccountNumberChange = (value: string) => {
-  //   // Only allow numeric input and limit to reasonable length
-  //   const numericValue = value.replace(/\D/g, '').slice(0, 17);
-  //   handleBankAccountDataChange('accountNumber', numericValue);
-  // };
-
-  const handleManagePlan = () => {
-    if (onShowPlanUpgrade) {
-      onShowPlanUpgrade();
-    }
+  const onPlanUpgradeBack = () => {
+    setShowAvailablePlans(false);
+    fetchUserProfile()
   };
 
   const handleViewBillingHistory = () => {
@@ -647,7 +645,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
             </Card>
 
             {/* Your Plan - Subscription Card */}
-            <Card className="shadow-lg border-0 rounded-2xl">
+            { showAvailablePlans ? <PlanUpgrade onPlansClose={onPlanUpgradeBack} currentPlan={subscriptionData?.subscriptionPlan} /> : null }
+
+            { !showAvailablePlans ? <Card className="shadow-lg border-0 rounded-2xl">
               <CardHeader className="pb-6">
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <div className="w-10 h-10 bg-[#E5E3FB] rounded-full flex items-center justify-center">
@@ -732,7 +732,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </Card> : null }
 
             {/* Bank Account Details Section */}
             <Card className="shadow-lg border-0 rounded-2xl">
@@ -948,9 +948,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <p className="text-sm text-gray-600">Receive notifications about new bookings and updates</p>
                     </div>
                     <Switch
-                      checked={notificationSettings.emailAlerts}
+                      checked={generalSettings.email_alerts}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, emailAlerts: checked })
+                        setGeneralSettings({ ...generalSettings, email_alerts: checked })
                       }
                     />
                   </div>
@@ -961,9 +961,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <p className="text-sm text-gray-600">Get text messages for urgent notifications</p>
                     </div>
                     <Switch
-                      checked={notificationSettings.smsAlerts}
+                      checked={generalSettings.sms_alerts}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, smsAlerts: checked })
+                        setGeneralSettings({ ...generalSettings, sms_alerts: checked })
                       }
                     />
                   </div>
@@ -974,9 +974,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                       <p className="text-sm text-gray-600">Automated reminders for upcoming appointments</p>
                     </div>
                     <Switch
-                      checked={notificationSettings.appointmentReminders}
+                      checked={generalSettings.appointment_reminders}
                       onCheckedChange={(checked) =>
-                        setNotificationSettings({ ...notificationSettings, appointmentReminders: checked })
+                        setGeneralSettings({ ...generalSettings, appointment_reminders: checked })
                       }
                     />
                   </div>
@@ -1080,9 +1080,9 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                     <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
                   </div>
                   <Switch
-                    checked={securitySettings.twoFactorAuth}
+                    checked={generalSettings.mfa_auth}
                     onCheckedChange={(checked) =>
-                      setSecuritySettings({ ...securitySettings, twoFactorAuth: checked })
+                      setGeneralSettings({ ...generalSettings, mfa_auth: checked })
                     }
                   />
                 </div>
@@ -1103,7 +1103,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <Label className="text-[#1E1E1E] font-medium">Language</Label>
-                    <Select value={generalSettings.language} onValueChange={(value) => setGeneralSettings({ ...generalSettings, language: value })}>
+                    <Select value={generalSettings.user_language} onValueChange={(value) => setGeneralSettings({ ...generalSettings, user_language: value })}>
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
@@ -1117,7 +1117,7 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
 
                   <div className="space-y-3">
                     <Label className="text-[#1E1E1E] font-medium">Time Zone</Label>
-                    <Select value={generalSettings.timezone} onValueChange={(value) => setGeneralSettings({ ...generalSettings, timezone: value })}>
+                    <Select value={generalSettings.time_zone} onValueChange={(value) => setGeneralSettings({ ...generalSettings, timezone: value })}>
                       <SelectTrigger className="h-12 bg-[#f3f3f5] border-gray-200 rounded-lg">
                         <SelectValue />
                       </SelectTrigger>
@@ -1249,6 +1249,13 @@ This Privacy Policy is effective as of January 1, 2025 and may be updated period
                 </div>
               </CardContent>
             </Card>
+            <div className="flex justify-end">
+              <Button onClick={handleGeneralSettingsSave} variant="outline"
+                className="flex items-center space-x-2 px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50 text-blue-500">
+                <Save className="w-4 h-4" />
+                <span>Save Settings</span>
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -49,15 +49,12 @@ export default function OnboardingPage() {
             totalHours: 0
         },
         subscription: {
-            tier: 'tier1', // Default to tier1 for existing users
-            planName: 'Tier 1',
-            monthlyPrice: 199,
-            features: [
-                'Basic platform access',
-                'Listed in patient-facing search',
-                'Up to 5 new-patient bookings/month',
-                'Standard search ranking'
-            ] as string[]
+            plan_id: '',
+            plan_name: '',
+            plan_price: 0,
+            plan_duration: 0,
+            plan_duration_type: '',
+            plan_features: [],
         },
         agreements: {
             agreedToAllTerms: false,

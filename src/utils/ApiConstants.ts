@@ -45,6 +45,7 @@ export const DENTIST_ENDPOINT = {
 
   // User Subscription
   USER_SUBSCRIPTION: `${APPOINTMENTS_BASE}/user-subscription`,
+  UPGRADE_SUBSCRIPTION: `${USERS_BASE}/upgrade-subscription`,
 
   // Authenticate User routes endpoint
   ACTIVITY: `/activity`,
@@ -80,6 +81,7 @@ export const DENTIST_ENDPOINT = {
   //User
   GET_DENTIST_PROFILE: `${USERS_BASE}/dentist-profile`,
   CHANGE_PASSWORD: `${USERS_BASE}/update-password`,
+  CHANGE_GENERAL_SETTINGS: `${USERS_BASE}/update-settings`,
 
 };
 

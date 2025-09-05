@@ -47,11 +47,11 @@ export function AuthenticatedLayout({
           activeItem={activeItem}
           onItemSelect={setActiveItem}
         />
-        <PlanUpgrade
+        {/* <PlanUpgrade
           onUpgrade={onPlanUpgradeComplete}
           onBack={onPlanUpgradeBack}
           currentPlan={currentSubscription}
-        />
+        /> */}
       </div>
     );
   }
