@@ -18,7 +18,7 @@ const initialState: DashboardInitialState = {
     errorMessage: '',
     clinicData: {},
     bankData: {},
-    availabilityData: [],
+    availabilityData: {},
     subscriptionData: {},
     agreementData: {},
     todayAppointments: [],
@@ -35,7 +35,7 @@ export const dashboardSlice = createSlice({
             state.bankData = { ...action.payload }
         },
         setAvailabilityData: (state, action: PayloadAction<any>) => {
-            state.availabilityData = [ ...action.payload ]
+            state.availabilityData = { ...action.payload }
         },
         setSubscriptionData: (state, action: PayloadAction<any>) => {
             state.subscriptionData = { ...action.payload }

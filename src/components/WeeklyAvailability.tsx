@@ -109,8 +109,8 @@ export function WeeklyAvailability({ availabilityData, onAvailabilityChange }: W
     for (const slot of daySlots) {
       if (excludeId && slot.id === excludeId) continue;
       
-      const [existingStartHour, existingStartMinute] = parseTimeToValue(slot.startTime).split(':').map(Number);
-      const [existingEndHour, existingEndMinute] = parseTimeToValue(slot.endTime).split(':').map(Number);
+      const [existingStartHour, existingStartMinute] = parseTimeToMinutes(slot.startTime).toString().split(':').map(Number);
+      const [existingEndHour, existingEndMinute] = parseTimeToMinutes(slot.endTime).toString().split(':').map(Number);
       const existingStartMinutes = existingStartHour * 60 + existingStartMinute;
       const existingEndMinutes = existingEndHour * 60 + existingEndMinute;
       
@@ -135,6 +135,49 @@ export function WeeklyAvailability({ availabilityData, onAvailabilityChange }: W
     }
     
     return `${hour24.toString().padStart(2, '0')}:${minutes ? minutes.toString().padStart(2, '0') : '00'}`;
+  };
+
+  // Helper function to calculate total hours
+  const calculateTotalHours = (schedule: DayAvailability) => {
+    let totalMinutes = 0;
+    
+    Object.values(schedule).forEach((daySlots) => {
+      daySlots.forEach((slot) => {
+        const startTime = parseTimeToMinutes(slot.startTime);
+        const endTime = parseTimeToMinutes(slot.endTime);
+        totalMinutes += (endTime - startTime);
+      });
+    });
+    
+    return Math.round(totalMinutes / 60 * 100) / 100;
+  };
+
+  // Helper function to parse time string to minutes
+  const parseTimeToMinutes = (timeString: string) => {
+    const [time, period] = timeString.split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+    let hour24 = hours;
+    
+    if (period === 'PM' && hours !== 12) {
+      hour24 = hours + 12;
+    } else if (period === 'AM' && hours === 12) {
+      hour24 = 0;
+    }
+    
+    return hour24 * 60 + (minutes || 0);
+  };
+
+  const handleAvailabilityChange = (newAvailability: DayAvailability) => {
+    setAvailability(newAvailability);
+    
+    // Calculate total hours and notify parent
+    if (onAvailabilityChange) {
+      const totalHours = calculateTotalHours(newAvailability);
+      onAvailabilityChange({
+        schedule: newAvailability,
+        totalHours: totalHours
+      });
+    }
   };
 
   const addTimeSlot = (day: string) => {
@@ -169,12 +212,7 @@ export function WeeklyAvailability({ availabilityData, onAvailabilityChange }: W
       [selectedDay]: [...(availability[selectedDay] || []), newSlot]
     };
     
-    setAvailability(updatedAvailability);
-    
-    // Notify parent component of changes
-    if (onAvailabilityChange) {
-      onAvailabilityChange(updatedAvailability);
-    }
+    handleAvailabilityChange(updatedAvailability);
     
     setIsAddModalOpen(false);
   };
@@ -208,12 +246,7 @@ export function WeeklyAvailability({ availabilityData, onAvailabilityChange }: W
       )
     };
     
-    setAvailability(updatedAvailability);
-    
-    // Notify parent component of changes
-    if (onAvailabilityChange) {
-      onAvailabilityChange(updatedAvailability);
-    }
+    handleAvailabilityChange(updatedAvailability);
   };
 
   const deleteTimeSlot = (id: string) => {
@@ -228,12 +261,7 @@ export function WeeklyAvailability({ availabilityData, onAvailabilityChange }: W
       [day]: availability[day].filter(slot => slot.id !== id)
     };
     
-    setAvailability(updatedAvailability);
-    
-    // Notify parent component of changes
-    if (onAvailabilityChange) {
-      onAvailabilityChange(updatedAvailability);
-    }
+    handleAvailabilityChange(updatedAvailability);
   };
 
   const handleCancelAdd = () => {

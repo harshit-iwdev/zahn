@@ -486,7 +486,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  {data.availability.weeklyHours}
+                  {availabilityData.general_schedule.totalHours}
                 </p>
                 <p className="text-sm text-muted-foreground">hours this week</p>
               </div>
@@ -494,24 +494,24 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Minimum Required:</span>
-                  <span className="font-medium text-foreground">{data.availability.minimumRequired}h</span>
+                  <span className="font-medium text-foreground">{availabilityData.general_schedule.minimumRequired}h</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData.general_schedule.totalHours >= data.availability.minimumRequired
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
+                    {availabilityData.general_schedule.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
                   </Badge>
                 </div>
               </div>
 
-              {data.availability.weeklyHours < data.availability.minimumRequired && (
+              {availabilityData.general_schedule.totalHours < data.availability.minimumRequired && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertTriangle className="w-4 h-4 text-red-600" />
                   <AlertDescription className="text-red-800 text-sm">
-                    Add {data.availability.minimumRequired - data.availability.weeklyHours} more hours to maintain visibility.
+                    Add {data.availability.minimumRequired - availabilityData.general_schedule.totalHours} more hours to maintain visibility.
                   </AlertDescription>
                 </Alert>
               )}

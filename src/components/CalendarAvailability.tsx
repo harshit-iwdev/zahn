@@ -31,35 +31,7 @@ export function CalendarAvailability() {
       const url = DENTIST_ENDPOINT.GET_DENTIST_AVAILABILITY_SCHEDULE;
       const exe = executor("get", url);
       const response = await exe.execute();
-      setAvailabilitySchedule(response.data.data.general_schedule);
-      console.log('response', response.data.data);
-      // Convert blocked dates from API if they exist
-      if (response.data.data.blocked_dates) {
-        const apiBlockedDates = response.data.data.blocked_dates.map((dateStr: string, index: number) => ({
-          id: `blocked_${index}`,
-          date: new Date(dateStr),
-          reason: 'Blocked'
-        }));
-        setBlockedDates([...apiBlockedDates]);
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  const handleSaveAvailability = async () => {
-    try {
-      // Prepare the data to save
-      const saveData = {
-        general_schedule: availabilitySchedule,
-        blocked_dates: blockedDates.map(blocked => blocked.date.toISOString().split('T')[0]) // Convert to YYYY-MM-DD format
-      };
-
-      // Call your save API endpoint here
-      const url = DENTIST_ENDPOINT.UPDATE_DENTIST_AVAILABILITY_SCHEDULE; // You'll need to add this endpoint
-      const exe = executor("put", url);
-      const response = await exe.execute(saveData);
-
+      console.log("response", response);
       setAvailabilitySchedule(response.data.data.general_schedule);
       
       // Convert blocked dates from API if they exist
@@ -72,15 +44,82 @@ export function CalendarAvailability() {
         setBlockedDates(apiBlockedDates);
       }
     } catch (error) {
+      console.log("error", error);
+    }
+  };
+
+  // Helper function to calculate total hours from availability schedule
+  const calculateTotalHours = (schedule: any) => {
+    if (!schedule || typeof schedule !== 'object') return 0;
+    
+    let totalMinutes = 0;
+    
+    Object.values(schedule).forEach((daySlots: any) => {
+      if (Array.isArray(daySlots)) {
+        daySlots.forEach((slot: any) => {
+          if (slot.startTime && slot.endTime) {
+            const startTime = parseTimeToMinutes(slot.startTime);
+            const endTime = parseTimeToMinutes(slot.endTime);
+            totalMinutes += (endTime - startTime);
+          }
+        });
+      }
+    });
+    
+    return Math.round(totalMinutes / 60 * 100) / 100; // Round to 2 decimal places
+  };
+
+  // Helper function to parse time string to minutes
+  const parseTimeToMinutes = (timeString: string) => {
+    const [time, period] = timeString.split(' ');
+    const [hours, minutes] = time.split(':').map(Number);
+    let hour24 = hours;
+    
+    if (period === 'PM' && hours !== 12) {
+      hour24 = hours + 12;
+    } else if (period === 'AM' && hours === 12) {
+      hour24 = 0;
+    }
+    
+    return hour24 * 60 + (minutes || 0);
+  };
+
+  const handleSaveAvailability = async () => {
+    try {
+      const totalHours = calculateTotalHours(availabilitySchedule?.schedule);
+      
+      // Prepare the data to save
+      const saveData = {
+        general_schedule: {
+          ...availabilitySchedule,
+          totalHours: totalHours
+        },
+        blocked_dates: blockedDates.map(blocked => blocked.date.toISOString().split('T')[0])
+      };
+
+      console.log("Saving availability with total hours:", totalHours);
+      console.log("Save data:", saveData);
+
+      // Call your save API endpoint here
+      const url = DENTIST_ENDPOINT.UPDATE_DENTIST_AVAILABILITY_SCHEDULE;
+      const exe = executor("put", url);
+      const response = await exe.execute(saveData);
+      
+      console.log("Availability saved successfully", response);
+      // Show success toast or notification
+    } catch (error) {
       console.error("Failed to save availability", error);
       // Show error toast or notification
     }
   };
 
   const handleAvailabilityChange = (newAvailability: any) => {
+    const totalHours = calculateTotalHours(newAvailability);
+    
     setAvailabilitySchedule(prev => ({
       ...prev,
-      schedule: newAvailability
+      schedule: newAvailability,
+      totalHours: totalHours
     }));
   };
 
@@ -101,6 +140,9 @@ export function CalendarAvailability() {
     return availabilitySchedule?.schedule?.[dayName]?.length > 0;
   };
 
+  // Get current total hours for display
+  const currentTotalHours = calculateTotalHours(availabilitySchedule?.schedule);
+
   return (
     <div className="flex-1 p-8 bg-gray-50 overflow-auto">
       <div className="max-w-6xl mx-auto">
@@ -110,6 +152,22 @@ export function CalendarAvailability() {
             Calendar & Availability
           </h1>
           <p className="text-gray-600">Manage when you're available for appointments</p>
+          
+          {/* Total Hours Display */}
+          <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">Total Weekly Hours</h3>
+                <p className="text-sm text-gray-600">Total available hours per week</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#433CE7]">
+                  {currentTotalHours.toFixed(1)}
+                </div>
+                <div className="text-sm text-gray-500">hours</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* External Calendar Sync */}
@@ -168,7 +226,7 @@ export function CalendarAvailability() {
             />
             
             {/* Blocked Dates */}
-            <BlockedDates onBlockedDates={handleBlockedDatesChange} initialBlockedDates={blockedDates} />
+            <BlockedDates onBlockedDates={handleBlockedDatesChange} />
           </div>
 
           {/* Right Column - Calendar View */}
@@ -192,16 +250,17 @@ export function CalendarAvailability() {
                       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
                         const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
                         const hasAvailability = availabilitySchedule?.schedule?.[dayName]?.length > 0;
+                        const dayHours = calculateDayHours(availabilitySchedule?.schedule?.[dayName] || []);
                         
                         return (
                           <div key={day} className="flex items-center justify-between p-2 rounded border border-gray-100">
                             <span className="text-sm font-medium text-gray-700">{day}</span>
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-2">
                               <div className={`w-3 h-3 rounded-full ${
                                 hasAvailability ? 'bg-[#433CE7]' : 'bg-gray-200'
                               }`}></div>
                               <span className="text-xs text-gray-500">
-                                {hasAvailability ? 'Available' : 'Blocked'}
+                                {hasAvailability ? `${dayHours.toFixed(1)}h` : 'Blocked'}
                               </span>
                             </div>
                           </div>
@@ -250,10 +309,26 @@ export function CalendarAvailability() {
             className="bg-[#433CE7] hover:bg-[#3730a3] text-white px-8 py-3"
           >
             <Clock className="w-4 h-4 mr-2" />
-            Save Availability
+            Save Availability ({currentTotalHours.toFixed(1)}h)
           </Button>
         </div>
       </div>
     </div>
   );
+
+  // Helper function to calculate hours for a specific day
+  function calculateDayHours(daySlots: any[]) {
+    if (!Array.isArray(daySlots)) return 0;
+    
+    let totalMinutes = 0;
+    daySlots.forEach((slot: any) => {
+      if (slot.startTime && slot.endTime) {
+        const startTime = parseTimeToMinutes(slot.startTime);
+        const endTime = parseTimeToMinutes(slot.endTime);
+        totalMinutes += (endTime - startTime);
+      }
+    });
+    
+    return Math.round(totalMinutes / 60 * 100) / 100;
+  }
 }
