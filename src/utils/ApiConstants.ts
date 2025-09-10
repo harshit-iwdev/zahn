@@ -36,6 +36,7 @@ export const DENTIST_ENDPOINT = {
 
   // Dentist Availability Schedule
   GET_DENTIST_AVAILABILITY_SCHEDULE: `${USERS_BASE}/availability-schedule`,
+  UPDATE_DENTIST_AVAILABILITY_SCHEDULE: `${USERS_BASE}/update-schedule`,
 
   // Bank Account
   UPDATE_BANK_DATA: `${ONBOARDING_BASE}/update-bank-data`,
@@ -49,6 +50,7 @@ export const DENTIST_ENDPOINT = {
   // User Subscription
   USER_SUBSCRIPTION: `${APPOINTMENTS_BASE}/user-subscription`,
   UPGRADE_SUBSCRIPTION: `${USERS_BASE}/upgrade-subscription`,
+  GET_EARNING_SUMMARY: `${USERS_BASE}/earnings-summary`,
 
   // Authenticate User routes endpoint
   ACTIVITY: `/activity`,

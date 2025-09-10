@@ -13,10 +13,14 @@ import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "./reduxSlice/dashboardSlice";
 import { useAppDispatch } from "./redux/hooks";
 import { ROUTES } from "./routes";
+import { useSelector } from "react-redux";
+import { RootState } from "./redux/store";
+import { setIsAuthenticated } from "./reduxSlice/userSlice";
 
 
 export default function OnboardingPage() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
+    // const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showRegistration, setShowRegistration] = useState(false);
     const [showClinicOnboarding, setShowClinicOnboarding] = useState(false);
     const [showBankAccountOnboarding, setShowBankAccountOnboarding] = useState(false);
@@ -65,7 +69,7 @@ export default function OnboardingPage() {
     });
 
     const handleLogin = () => {
-        setIsAuthenticated(true);
+        dispatch(setIsAuthenticated(true));
         setShowRegistration(false);
         setShowClinicOnboarding(false);
         setShowBankAccountOnboarding(false);
@@ -190,14 +194,14 @@ export default function OnboardingPage() {
 
     const handleProfileConfirmationBackToHome = () => {
         setShowProfileConfirmation(false);
-        setIsAuthenticated(true);
+        dispatch(setIsAuthenticated(true));
         // API call to save profile submission confirmation
         // navigate('/dashboard');
     };
 
     const handleProfileConfirmationLogOut = () => {
         setShowProfileConfirmation(false);
-        setIsAuthenticated(false);
+        dispatch(setIsAuthenticated(false));
 
         // Clear all data from the Redux store
         dispatch(setClinicData({}));
@@ -211,7 +215,7 @@ export default function OnboardingPage() {
     };
 
     const handleLogout = () => {
-        setIsAuthenticated(false);
+        dispatch(setIsAuthenticated(false));
         setShowRegistration(false);
         setShowClinicOnboarding(false);
         setShowBankAccountOnboarding(false);

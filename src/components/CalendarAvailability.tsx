@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
-// import { WeeklyAvailability } from "./WeeklyAvailability";
 import { BlockedDates } from "./BlockedDates";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { CalendarDays, Clock } from "lucide-react";
@@ -10,11 +9,18 @@ import { WeeklyAvailability } from "./WeeklyAvailability";
 import { executor } from "@/http/executer";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 
+interface BlockedDate {
+  id: string;
+  date: Date;
+  reason: string;
+}
+
 export function CalendarAvailability() {
   const [isGoogleSyncEnabled, setIsGoogleSyncEnabled] = useState(true);
   const [isAppleSyncEnabled, setIsAppleSyncEnabled] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [availabilitySchedule, setAvailabilitySchedule] = useState<any>([]);
+  const [availabilitySchedule, setAvailabilitySchedule] = useState<any>(null);
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
 
   useEffect(() => {
     fetchDentistAvailabilitySchedule();
@@ -25,17 +31,74 @@ export function CalendarAvailability() {
       const url = DENTIST_ENDPOINT.GET_DENTIST_AVAILABILITY_SCHEDULE;
       const exe = executor("get", url);
       const response = await exe.execute();
-      console.log("response", response);
       setAvailabilitySchedule(response.data.data.general_schedule);
+      console.log('response', response.data.data);
+      // Convert blocked dates from API if they exist
+      if (response.data.data.blocked_dates) {
+        const apiBlockedDates = response.data.data.blocked_dates.map((dateStr: string, index: number) => ({
+          id: `blocked_${index}`,
+          date: new Date(dateStr),
+          reason: 'Blocked'
+        }));
+        setBlockedDates([...apiBlockedDates]);
+      }
     } catch (error) {
       console.log("error", error);
     }
   };
 
-  const handleSaveAvailability = () => {
-    // Handle save availability logic
-    console.log("Saving availability settings");
-    // Show success toast or notification
+  const handleSaveAvailability = async () => {
+    try {
+      // Prepare the data to save
+      const saveData = {
+        general_schedule: availabilitySchedule,
+        blocked_dates: blockedDates.map(blocked => blocked.date.toISOString().split('T')[0]) // Convert to YYYY-MM-DD format
+      };
+
+      // Call your save API endpoint here
+      const url = DENTIST_ENDPOINT.UPDATE_DENTIST_AVAILABILITY_SCHEDULE; // You'll need to add this endpoint
+      const exe = executor("put", url);
+      const response = await exe.execute(saveData);
+
+      setAvailabilitySchedule(response.data.data.general_schedule);
+      
+      // Convert blocked dates from API if they exist
+      if (response.data.data.blocked_dates) {
+        const apiBlockedDates = response.data.data.blocked_dates.map((dateStr: string, index: number) => ({
+          id: `blocked_${index}`,
+          date: new Date(dateStr),
+          reason: 'Blocked'
+        }));
+        setBlockedDates(apiBlockedDates);
+      }
+    } catch (error) {
+      console.error("Failed to save availability", error);
+      // Show error toast or notification
+    }
+  };
+
+  const handleAvailabilityChange = (newAvailability: any) => {
+    setAvailabilitySchedule(prev => ({
+      ...prev,
+      schedule: newAvailability
+    }));
+  };
+
+  const handleBlockedDatesChange = (newBlockedDates: BlockedDate[]) => {
+    setBlockedDates(newBlockedDates);
+  };
+
+  // Helper function to check if a date is blocked
+  const isDateBlocked = (date: Date) => {
+    return blockedDates.some(blocked => 
+      blocked.date.toDateString() === date.toDateString()
+    );
+  };
+
+  // Helper function to check if a date has availability
+  const hasAvailability = (date: Date) => {
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
+    return availabilitySchedule?.schedule?.[dayName]?.length > 0;
   };
 
   return (
@@ -99,10 +162,13 @@ export function CalendarAvailability() {
           {/* Left Column - Availability Settings */}
           <div className="lg:col-span-2 space-y-6">
             {/* Weekly Availability */}
-            <WeeklyAvailability />
+            <WeeklyAvailability 
+              availabilityData={availabilitySchedule?.schedule || {}} 
+              onAvailabilityChange={handleAvailabilityChange}
+            />
             
             {/* Blocked Dates */}
-            <BlockedDates />
+            <BlockedDates onBlockedDates={handleBlockedDatesChange} initialBlockedDates={blockedDates} />
           </div>
 
           {/* Right Column - Calendar View */}
@@ -123,19 +189,24 @@ export function CalendarAvailability() {
                   <div className="text-center">
                     <p className="text-sm text-gray-600 mb-4">Weekly availability view</p>
                     <div className="space-y-2">
-                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-                        <div key={day} className="flex items-center justify-between p-2 rounded border border-gray-100">
-                          <span className="text-sm font-medium text-gray-700">{day}</span>
-                          <div className="flex items-center space-x-1">
-                            <div className={`w-3 h-3 rounded-full ${
-                              index < 5 ? 'bg-[#433CE7]' : 'bg-gray-200'
-                            }`}></div>
-                            <span className="text-xs text-gray-500">
-                              {index < 5 ? 'Available' : 'Blocked'}
-                            </span>
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                        const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
+                        const hasAvailability = availabilitySchedule?.schedule?.[dayName]?.length > 0;
+                        
+                        return (
+                          <div key={day} className="flex items-center justify-between p-2 rounded border border-gray-100">
+                            <span className="text-sm font-medium text-gray-700">{day}</span>
+                            <div className="flex items-center space-x-1">
+                              <div className={`w-3 h-3 rounded-full ${
+                                hasAvailability ? 'bg-[#433CE7]' : 'bg-gray-200'
+                              }`}></div>
+                              <span className="text-xs text-gray-500">
+                                {hasAvailability ? 'Available' : 'Blocked'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </TabsContent>
@@ -147,8 +218,8 @@ export function CalendarAvailability() {
                     onSelect={setSelectedDate}
                     className="rounded-md"
                     modifiers={{
-                      available: (date) => date.getDay() >= 1 && date.getDay() <= 5, // Mon-Fri
-                      blocked: (date) => [15, 16].includes(date.getDate()) && date.getMonth() === 7 // Aug 15-16
+                      available: (date) => hasAvailability(date) && !isDateBlocked(date),
+                      blocked: (date) => isDateBlocked(date) || !hasAvailability(date)
                     }}
                     modifiersStyles={{
                       available: { backgroundColor: '#E5E3FB' },

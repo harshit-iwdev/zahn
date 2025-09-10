@@ -104,25 +104,25 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
   const toggleTimeSlot = (day: string, hour: number) => {
     const slotKey = getSlotKey(day, hour);
     const newSelectedSlots = new Set(selectedSlots);
-    
+
     if (newSelectedSlots.has(slotKey)) {
       newSelectedSlots.delete(slotKey);
     } else {
       newSelectedSlots.add(slotKey);
     }
-    
+
     setSelectedSlots(newSelectedSlots);
   };
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
     const newSelectedSlots = new Set<string>();
-    
+
     Object.entries(preset.schedule).forEach(([day, hours]) => {
       hours.forEach(hour => {
         newSelectedSlots.add(getSlotKey(day, hour));
       });
     });
-    
+
     setSelectedSlots(newSelectedSlots);
   };
 
@@ -134,17 +134,64 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
     if (total === 0) {
       return { type: 'neutral', message: 'Select your available time slots to get started' };
     } else if (total < MINIMUM_HOURS) {
-      return { 
-        type: 'warning', 
-        message: `You need ${MINIMUM_HOURS - total} more hour${MINIMUM_HOURS - total === 1 ? '' : 's'} to meet the minimum requirement` 
+      return {
+        type: 'warning',
+        message: `You need ${MINIMUM_HOURS - total} more hour${MINIMUM_HOURS - total === 1 ? '' : 's'} to meet the minimum requirement`
       };
     } else {
-      return { 
-        type: 'success', 
-        message: `Great! You've selected ${total} hours. You're eligible to appear in search.` 
+      return {
+        type: 'success',
+        message: `Great! You've selected ${total} hours. You're eligible to appear in search.`
       };
     }
   };
+
+  // const handleSubmit = async () => {
+  //   if (!meetsMinimum()) return;
+
+  //   setIsLoading(true);
+
+  //   try {
+  //     // Convert selected slots to structured data
+  //     const availabilityData = {
+  //       timezone,
+  //       calendarSync,
+  //       schedule: {} as Record<string, number[]>,
+  //       totalHours: getTotalHours()
+  //     };
+
+  //     const modifiedData = {
+  //       timezone,
+  //       calendarSync,
+  //       schedule: {} as Record<string, number[]>,
+  //       totalHours: getTotalHours()
+  //     };
+
+  //     // Group slots by day
+  //     DAYS.forEach(day => {
+  //       availabilityData.schedule[day] = HOURS.filter(hour =>
+  //         selectedSlots.has(getSlotKey(day, hour))
+  //       );
+  //     });
+
+  //     // calling availability setup API
+  //     const url = DENTIST_ENDPOINT.AVAILABILITY;
+  //     const exe = executor("post", url);
+  //     availabilitySetupRef.current = exe;
+  //     const response = await availabilitySetupRef.current.execute({ dentistAvailabilitySchedule: availabilityData, modifedSchedule: modifiedData });
+  //     const responseData = response.data;
+  //     console.log('responseData---184', responseData);
+  //     console.log('Availability data---185', availabilityData);
+  //     console.log('Modified data---186', modifiedData);
+  //     onComplete(responseData);
+  //   } catch (error) {
+  //     console.error('Failed to save availability:', error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // ... existing code ...
 
   const handleSubmit = async () => {
     if (!meetsMinimum()) return;
@@ -152,33 +199,72 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
     setIsLoading(true);
 
     try {
-      // Convert selected slots to structured data
+      // Helper function to convert consecutive hours to time slots
+      const convertHoursToTimeSlots = (hours: number[]) => {
+        if (hours.length === 0) return [];
+
+        // Sort hours to ensure proper grouping
+        const sortedHours = [...hours].sort((a, b) => a - b);
+        const timeSlots = [];
+        let currentSlot = { start: sortedHours[0], end: sortedHours[0] };
+
+        for (let i = 1; i < sortedHours.length; i++) {
+          if (sortedHours[i] === currentSlot.end + 1) {
+            // Consecutive hour, extend current slot
+            currentSlot.end = sortedHours[i];
+          } else {
+            // Non-consecutive hour, save current slot and start new one
+            timeSlots.push({
+              id: `slot_${currentSlot.start}_${currentSlot.end}`,
+              startTime: formatTime(currentSlot.start),
+              endTime: formatTime(currentSlot.end + 1) // End time is next hour
+            });
+            currentSlot = { start: sortedHours[i], end: sortedHours[i] };
+          }
+        }
+
+        // Add the last slot
+        timeSlots.push({
+          id: `slot_${currentSlot.start}_${currentSlot.end}`,
+          startTime: formatTime(currentSlot.start),
+          endTime: formatTime(currentSlot.end + 1)
+        });
+
+        return timeSlots;
+      };
+
+      // Convert selected slots to structured data with time slots
       const availabilityData = {
         timezone,
         calendarSync,
-        schedule: {} as Record<string, number[]>,
+        schedule: {} as Record<string, Array<{ id: string, startTime: string, endTime: string }>>,
         totalHours: getTotalHours()
       };
 
       const modifiedData = {
         timezone,
         calendarSync,
-        schedule: {} as Record<string, number[]>,
+        schedule: {} as Record<string, Array<{ id: string, startTime: string, endTime: string }>>,
         totalHours: getTotalHours()
       };
 
-      // Group slots by day
+      // Group slots by day and convert to time slots
       DAYS.forEach(day => {
-        availabilityData.schedule[day] = HOURS.filter(hour =>
+        const dayHours = HOURS.filter(hour =>
           selectedSlots.has(getSlotKey(day, hour))
         );
+        availabilityData.schedule[day] = convertHoursToTimeSlots(dayHours);
+        modifiedData.schedule[day] = convertHoursToTimeSlots(dayHours);
       });
 
       // calling availability setup API
       const url = DENTIST_ENDPOINT.AVAILABILITY;
       const exe = executor("post", url);
       availabilitySetupRef.current = exe;
-      const response = await availabilitySetupRef.current.execute({ dentistAvailabilitySchedule: availabilityData, modifedSchedule: modifiedData });
+      const response = await availabilitySetupRef.current.execute({
+        dentistAvailabilitySchedule: availabilityData,
+        modifedSchedule: modifiedData
+      });
       const responseData = response.data;
       console.log('responseData---184', responseData);
       console.log('Availability data---185', availabilityData);
@@ -190,6 +276,8 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
       setIsLoading(false);
     }
   };
+
+  // ... existing code ...
 
   const status = getStatusMessage();
 
@@ -210,7 +298,7 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
               You must maintain at least 12 hours/week bookable with 48-hour advance notice to remain active on ZaaN.
             </p>
           </CardHeader>
-          
+
           <CardContent className="px-8 pb-12">
             {/* Status and Counter */}
             <div className="mb-8">
@@ -222,14 +310,13 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
                   </span>
                 </div>
                 <div className="text-right">
-                  <Badge 
-                    className={`px-4 py-2 ${
-                      status.type === 'success' 
-                        ? 'bg-green-100 text-green-800 hover:bg-green-100' 
+                  <Badge
+                    className={`px-4 py-2 ${status.type === 'success'
+                        ? 'bg-green-100 text-green-800 hover:bg-green-100'
                         : status.type === 'warning'
-                        ? 'bg-orange-100 text-orange-800 hover:bg-orange-100'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-100'
-                    }`}
+                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-100'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-100'
+                      }`}
                   >
                     {status.type === 'success' && <Check className="w-4 h-4 mr-1" />}
                     {status.type === 'warning' && <AlertTriangle className="w-4 h-4 mr-1" />}
@@ -237,21 +324,19 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
                   </Badge>
                 </div>
               </div>
-              
-              <Alert className={`${
-                status.type === 'success' 
-                  ? 'border-green-200 bg-green-50' 
+
+              <Alert className={`${status.type === 'success'
+                  ? 'border-green-200 bg-green-50'
                   : status.type === 'warning'
-                  ? 'border-orange-200 bg-orange-50'
-                  : 'border-blue-200 bg-blue-50'
-              }`}>
-                <AlertDescription className={`${
-                  status.type === 'success' 
-                    ? 'text-green-800' 
-                    : status.type === 'warning'
-                    ? 'text-orange-800'
-                    : 'text-blue-800'
+                    ? 'border-orange-200 bg-orange-50'
+                    : 'border-blue-200 bg-blue-50'
                 }`}>
+                <AlertDescription className={`${status.type === 'success'
+                    ? 'text-green-800'
+                    : status.type === 'warning'
+                      ? 'text-orange-800'
+                      : 'text-blue-800'
+                  }`}>
                   {status.message}
                 </AlertDescription>
               </Alert>
@@ -291,7 +376,7 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Time Slots */}
                 {HOURS.map(hour => (
                   <div key={hour} className="grid grid-cols-8 border-b border-border last:border-b-0">
@@ -304,11 +389,10 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
                         <button
                           key={`${day}-${hour}`}
                           onClick={() => toggleTimeSlot(day, hour)}
-                          className={`p-3 text-center transition-all border-r border-border last:border-r-0 hover:bg-[#E5E3FB]/50 ${
-                            isSelected 
-                              ? 'bg-[#433CE7] text-white hover:bg-[#3730a3]' 
+                          className={`p-3 text-center transition-all border-r border-border last:border-r-0 hover:bg-[#E5E3FB]/50 ${isSelected
+                              ? 'bg-[#433CE7] text-white hover:bg-[#3730a3]'
                               : 'bg-white hover:bg-[#E5E3FB]/30'
-                          }`}
+                            }`}
                         >
                           {isSelected && <Check className="w-4 h-4 mx-auto" />}
                         </button>
@@ -349,10 +433,10 @@ export function AvailabilitySetup({ onComplete }: AvailabilitySetupProps) {
                     <p className="font-medium text-muted-foreground">Sync with Google or Apple Calendar</p>
                     <p className="text-sm text-muted-foreground">Coming soon</p>
                   </div>
-                  <Switch 
-                    checked={false} 
-                    disabled 
-                    className="opacity-50" 
+                  <Switch
+                    checked={false}
+                    disabled
+                    className="opacity-50"
                   />
                 </div>
               </div>

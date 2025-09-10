@@ -1,88 +1,65 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DollarSign, Download, Calendar, User, FileText } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Input } from "./ui/input";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { executor } from "@/http/executer";
+import { formatDate } from "@/utils/formatDateTime";
 
 export function EarningsSummary() {
-  const [dateRange, setDateRange] = useState({
-    from: '',
-    to: ''
-  });
+  const [start_date, setStartDate] = useState<string>('');
+  const [end_date, setEndDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [summaryRecords, setSummaryRecords] = useState<any[]>([]);
+  const [totalSummaryRecords, setTotalSummaryRecords] = useState<number>(0);
+  const [appointmentCount, setAppointmentCount] = useState<number>(0);
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [processingAmount, setProcessingAmount] = useState<number>(0);
+  const pageSize = 10;
 
-  // Mock data for completed appointments matching your specifications
-  const completedAppointments = [
-    {
-      id: '1',
-      date: 'Aug 12, 2025',
-      patientName: 'Sarah Johnson',
-      fee: 300.00,
-      payoutStatus: 'paid'
-    },
-    {
-      id: '2',
-      date: 'Aug 11, 2025',
-      patientName: 'Michael Chen',
-      fee: 275.00,
-      payoutStatus: 'processing'
-    },
-    {
-      id: '3',
-      date: 'Aug 10, 2025',
-      patientName: 'Emily Davis',
-      fee: 180.00,
-      payoutStatus: 'paid'
-    },
-    {
-      id: '4',
-      date: 'Aug 9, 2025',
-      patientName: 'John Rodriguez',
-      fee: 220.00,
-      payoutStatus: 'paid'
-    },
-    {
-      id: '5',
-      date: 'Aug 8, 2025',
-      patientName: 'Lisa Wang',
-      fee: 125.00,
-      payoutStatus: 'processing'
-    },
-    {
-      id: '6',
-      date: 'Aug 7, 2025',
-      patientName: 'David Thompson',
-      fee: 195.00,
-      payoutStatus: 'paid'
-    },
-    {
-      id: '7',
-      date: 'Aug 6, 2025',
-      patientName: 'Amanda Brown',
-      fee: 165.00,
-      payoutStatus: 'processing'
-    },
-    {
-      id: '8',
-      date: 'Aug 5, 2025',
-      patientName: 'Robert Wilson',
-      fee: 155.00,
-      payoutStatus: 'paid'
+  useEffect(() => {
+    fetchEarningSummary();
+  }, []);
+
+  useEffect(() => {
+    fetchEarningSummary();
+  }, [start_date, end_date, currentPage]);
+
+  const fetchEarningSummary = async () => {
+    try {
+      const url = DENTIST_ENDPOINT.GET_EARNING_SUMMARY;
+      const exe = executor("post", url);
+      const body = {
+        "page_number": currentPage,
+        "page_size": pageSize
+      }
+      if (start_date && end_date) {
+        body["start_date"] = start_date;
+        body["end_date"] = end_date;
+      }
+      const axiosResponse = await exe.execute(body);
+      const apiBody = axiosResponse?.data;
+      const summaryResponse = apiBody?.data ?? apiBody;
+      console.log('Summary response:', summaryResponse);
+      setSummaryRecords(summaryResponse.records);
+      setTotalSummaryRecords(summaryResponse.total_records);
+      setAppointmentCount(summaryResponse.appointments_count);
+      setTotalEarnings(summaryResponse.total_earnings);
+      setProcessingAmount(summaryResponse.earn_processing);
+    } catch (error) {
+      console.error('Error fetching earnings summary:', error);
     }
-  ];
-
-  // Calculate metrics as specified
-  const totalEarnings = 1100.00;
-  const processingAmount = 510.00;
-  const totalAppointments = 8;
+  }
 
   const handleExportCSV = () => {
-    const csvData = completedAppointments.map(apt => ({
-      'Date': apt.date,
-      'Patient Name': apt.patientName,
-      'Fee': `$${apt.fee.toFixed(2)}`,
-      'Payout Status': apt.payoutStatus.charAt(0).toUpperCase() + apt.payoutStatus.slice(1)
+    const csvData = summaryRecords.map(apt => ({
+      'Date': apt.created_at,
+      'Patient Name': apt.patient.full_name,
+      'Fee': `$${apt.treatment_charges.toFixed(2)}`,
+      'Payout Status': apt.payment_status.charAt(0).toUpperCase() + apt.payment_status.slice(1)
     }));
 
     const csvContent = [
@@ -175,7 +152,7 @@ export function EarningsSummary() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Appointments</p>
-                  <p className="text-3xl font-bold text-gray-900">{totalAppointments}</p>
+                  <p className="text-3xl font-bold text-gray-900">{appointmentCount}</p>
                 </div>
                 <div className="w-12 h-12 bg-[#10B981] rounded-xl flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
@@ -197,8 +174,8 @@ export function EarningsSummary() {
                       <div className="relative">
                         <Input
                           type="date"
-                          value={dateRange.from}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                          value={start_date}
+                          onChange={(e) => setStartDate(e.target.value)}
                           className="w-40 text-sm border-gray-200 rounded-lg bg-gray-50 focus:bg-white transition-colors"
                         />
                       </div>
@@ -209,12 +186,17 @@ export function EarningsSummary() {
                       <div className="relative">
                         <Input
                           type="date"
-                          value={dateRange.to}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                          value={end_date}
+                          onChange={(e) => setEndDate(e.target.value)}
                           className="w-40 text-sm border-gray-200 rounded-lg bg-gray-50 focus:bg-white transition-colors"
                         />
                       </div>
                     </div>
+                    <span onClick={() => {
+                        setStartDate('');
+                        setEndDate('');
+                        setCurrentPage(1);
+                      }} className="text-sm font-medium text-gray-700 cursor-pointer">Clear Date</span>
                   </div>
                 </div>
                 
@@ -247,30 +229,30 @@ export function EarningsSummary() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {completedAppointments.map((appointment, index) => (
+              {summaryRecords.map((summary, index) => (
                 <TableRow 
-                  key={appointment.id} 
+                  key={summary.id} 
                   className="transition-colors duration-200 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                 >
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center space-x-3">
                       <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium text-gray-900 text-sm">{appointment.date}</span>
+                      <span className="font-medium text-gray-900 text-sm">{formatDate(summary.created_at)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center space-x-3">
                       <User className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium text-gray-900 text-sm">{appointment.patientName}</span>
+                      <span className="font-medium text-gray-900 text-sm">{summary.patient.full_name}</span>
                     </div>
                   </TableCell>
                   <TableCell className="py-4 px-6">
                     <span className="font-semibold text-gray-900 text-sm">
-                      ${appointment.fee.toFixed(2)}
+                      ${summary.treatment_charges.toFixed(2)}
                     </span>
                   </TableCell>
                   <TableCell className="py-4 px-6">
-                    {getStatusBadge(appointment.payoutStatus)}
+                    {getStatusBadge(summary.payment_status)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -279,7 +261,7 @@ export function EarningsSummary() {
         </Card>
 
         {/* Empty State */}
-        {completedAppointments.length === 0 && (
+        {summaryRecords.length === 0 && (
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl mt-8">
             <CardContent className="p-16 text-center">
               <DollarSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />

@@ -17,6 +17,10 @@ import { executor } from "@/http/executer";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { decryptAesGcmBase64, generateHashValue } from "@/http/encryption";
 import { PlanUpgrade } from "./PlanUpgrade";
+import { setIsAuthenticated, setLoginUserData } from "@/reduxSlice/userSlice";
+import { ROUTES } from "@/routes";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch } from "@/redux/hooks";
 
 interface ProfileSettingsProps {
   onShowPlanUpgrade?: () => void;
@@ -30,6 +34,8 @@ interface ProfileSettingsProps {
 }
 
 export function ProfileSettings({ onLogout, currentSubscription }: ProfileSettingsProps) {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -257,9 +263,15 @@ export function ProfileSettings({ onLogout, currentSubscription }: ProfileSettin
   };
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
+    // if (onLogout) {
+    //   onLogout();
+    // }
+
+      // setShowPlanUpgrade(false);
+      dispatch(setLoginUserData({}));
+      dispatch(setIsAuthenticated(false));
+      localStorage.removeItem('access_token');
+      navigate(ROUTES.LOGIN);
   };
 
   const handleDeleteAccount = () => {
