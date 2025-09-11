@@ -8,6 +8,8 @@ import { CalendarDays, Clock } from "lucide-react";
 import { WeeklyAvailability } from "./WeeklyAvailability";
 import { executor } from "@/http/executer";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { setAvailabilityData } from "@/reduxSlice/dashboardSlice";
+import { useDispatch } from "react-redux";
 
 interface BlockedDate {
   id: string;
@@ -21,6 +23,7 @@ export function CalendarAvailability() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [availabilitySchedule, setAvailabilitySchedule] = useState<any>(null);
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     fetchDentistAvailabilitySchedule();
@@ -31,20 +34,18 @@ export function CalendarAvailability() {
       const url = DENTIST_ENDPOINT.GET_DENTIST_AVAILABILITY_SCHEDULE;
       const exe = executor("get", url);
       const response = await exe.execute();
-      console.log("response", response);
       setAvailabilitySchedule(response.data.data.general_schedule);
-      
       // Convert blocked dates from API if they exist
       if (response.data.data.blocked_dates) {
-        const apiBlockedDates = response.data.data.blocked_dates.map((dateStr: string, index: number) => ({
-          id: `blocked_${index}`,
-          date: new Date(dateStr),
-          reason: 'Blocked'
+        const apiBlockedDates = response.data.data.blocked_dates.map((dateObj: any) => ({
+          id: dateObj.id,
+          date: new Date(dateObj.date),
+          reason: dateObj.reason
         }));
         setBlockedDates(apiBlockedDates);
       }
     } catch (error) {
-      console.log("error", error);
+      console.error("error", error);
     }
   };
 
@@ -94,18 +95,14 @@ export function CalendarAvailability() {
           ...availabilitySchedule,
           totalHours: totalHours
         },
-        blocked_dates: blockedDates.map(blocked => blocked.date.toISOString().split('T')[0])
+        blocked_dates: blockedDates
       };
-
-      console.log("Saving availability with total hours:", totalHours);
-      console.log("Save data:", saveData);
 
       // Call your save API endpoint here
       const url = DENTIST_ENDPOINT.UPDATE_DENTIST_AVAILABILITY_SCHEDULE;
       const exe = executor("put", url);
       const response = await exe.execute(saveData);
-      
-      console.log("Availability saved successfully", response);
+      dispatch(setAvailabilityData(response.data.data));
       // Show success toast or notification
     } catch (error) {
       console.error("Failed to save availability", error);
@@ -226,7 +223,7 @@ export function CalendarAvailability() {
             />
             
             {/* Blocked Dates */}
-            <BlockedDates onBlockedDates={handleBlockedDatesChange} />
+            <BlockedDates onBlockedDates={handleBlockedDatesChange} initialBlockedDates={blockedDates} />
           </div>
 
           {/* Right Column - Calendar View */}

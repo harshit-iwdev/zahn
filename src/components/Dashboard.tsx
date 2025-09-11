@@ -63,6 +63,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const todayAppointments = useSelector((state: RootState) => state.dashboard.todayAppointments);
   const subscriptionData = useSelector((state: RootState) => state.dashboard.subscriptionData);
   const availabilityData = useSelector((state: RootState) => state.dashboard.availabilityData);
+  console.log("availabilityData---66", availabilityData);
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.user);
   const data = MOCK_DATA;
@@ -80,6 +81,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       const axiosResponse = await exe.execute();
       const apiBody = axiosResponse?.data;
       const dashboardData = apiBody?.data ?? apiBody;
+      console.log("dashboardData---84", dashboardData);
       if (axiosResponse.status >= 200 && axiosResponse.status < 300 && dashboardData) {
         dispatch(setSubscriptionData(dashboardData.subscriptionData));
         dispatch(setAvailabilityData(dashboardData.availabilityData));
@@ -170,17 +172,14 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       // calling appointment today API
       const url = DENTIST_ENDPOINT.UPDATE_APPOINTMENT_AVAILABILITY;
       const body = {
-        acceptBookings: !availabilityData[0]?.acceptNewBookings
+        acceptBookings: !availabilityData?.accept_new_bookings
       };
       const exe = executor("put", url);
       const axiosResponse = await exe.execute(body);
       const apiBody = axiosResponse?.data;
       const availabilityResponse = apiBody?.data ?? apiBody;
-      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData[0]?.id) {
-        const updatedAvailability = availabilityData.map((item: any, idx: number) =>
-          idx === 0 ? { ...item, acceptNewBookings: availabilityResponse.acceptBookings } : item
-        );
-        dispatch(setAvailabilityData(updatedAvailability));
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData?.id) {
+        dispatch(setAvailabilityData({ ...availabilityData, accept_new_bookings: !availabilityData?.accept_new_bookings }));
       } else {
         console.log('Failed to update availability information. Please try again.');
       }
@@ -226,11 +225,11 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 <div>
                   <p className="font-medium text-foreground">Accept New Bookings</p>
                   <p className="text-sm text-muted-foreground">
-                    {availabilityData[0]?.acceptNewBookings ? "Patients can book appointments" : "Booking is paused"}
+                    {availabilityData?.accept_new_bookings ? "Patients can book appointments" : "Booking is paused"}
                   </p>
                 </div>
                 <Switch
-                  checked={availabilityData[0]?.acceptNewBookings}
+                  checked={availabilityData?.accept_new_bookings}
                   onCheckedChange={handleAppointmentAvailability}
                   className="data-[state=checked]:bg-[#433CE7]"
                 />
@@ -486,7 +485,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  {availabilityData.general_schedule.totalHours}
+                  {availabilityData?.general_schedule?.totalHours}
                 </p>
                 <p className="text-sm text-muted-foreground">hours this week</p>
               </div>
@@ -494,24 +493,24 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Minimum Required:</span>
-                  <span className="font-medium text-foreground">{availabilityData.general_schedule.minimumRequired}h</span>
+                  <span className="font-medium text-foreground">{availabilityData?.general_schedule?.minimumRequired}h</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={availabilityData.general_schedule.totalHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {availabilityData.general_schedule.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
+                    {availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
                   </Badge>
                 </div>
               </div>
 
-              {availabilityData.general_schedule.totalHours < data.availability.minimumRequired && (
+              {availabilityData?.general_schedule?.totalHours < data.availability.minimumRequired && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertTriangle className="w-4 h-4 text-red-600" />
                   <AlertDescription className="text-red-800 text-sm">
-                    Add {data.availability.minimumRequired - availabilityData.general_schedule.totalHours} more hours to maintain visibility.
+                    Add {data.availability.minimumRequired - availabilityData?.general_schedule?.totalHours} more hours to maintain visibility.
                   </AlertDescription>
                 </Alert>
               )}
