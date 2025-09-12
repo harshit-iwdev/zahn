@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { formatDate, formatTime } from "@/utils/formatDateTime";
 import { IAppointment } from "@/utils/datatypes";
 import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
@@ -18,6 +17,7 @@ interface AppointmentDetailsProps {
 }
 
 export function AppointmentDetails({ isOpen, onClose, appointment }: AppointmentDetailsProps) {
+  console.log("appointment---19", appointment);
   const [isMarkingCompleted, setIsMarkingCompleted] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 

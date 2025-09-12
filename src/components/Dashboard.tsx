@@ -63,6 +63,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const todayAppointments = useSelector((state: RootState) => state.dashboard.todayAppointments);
   const subscriptionData = useSelector((state: RootState) => state.dashboard.subscriptionData);
   const availabilityData = useSelector((state: RootState) => state.dashboard.availabilityData);
+  const [completedAppointments, setCompletedAppointments] = useState<IAppointment[]>([]);
   console.log("availabilityData---66", availabilityData);
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.user);
@@ -85,6 +86,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       if (axiosResponse.status >= 200 && axiosResponse.status < 300 && dashboardData) {
         dispatch(setSubscriptionData(dashboardData.subscriptionData));
         dispatch(setAvailabilityData(dashboardData.availabilityData));
+        setCompletedAppointments(dashboardData.completedAppointmentsData);
       } else {
         console.log('Failed to fetch dashboard information. Please try again.');
       }
@@ -147,7 +149,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
-  const handleViewAppointmentDetails = (appointment: any) => {
+  const handleViewAppointmentDetails = (appointment: IAppointment) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetails(true);
   };
@@ -274,7 +276,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                { todayAppointments.length > 0 && todayAppointments?.map((appointment: IAppointment) => (
+                { todayAppointments && todayAppointments.length > 0 && todayAppointments?.map((appointment: IAppointment) => (
                   <div key={appointment.appointment_id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-10 h-10 bg-[#E5E3FB] rounded-lg flex items-center justify-center">
@@ -303,7 +305,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   </div>
                 ))}
 
-                {todayAppointments.length === 0 && (
+                {todayAppointments && todayAppointments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No appointments scheduled for today</p>
@@ -314,7 +316,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
           </Card>
 
           {/* Completed Appointments Preview */}
-          {data.completedAppointments.length > 0 && (
+          {completedAppointments && completedAppointments.length > 0 && (
             <Card className="xl:col-span-1">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
@@ -324,14 +326,14 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {data.completedAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  {completedAppointments.map((appointment: IAppointment) => (
+                    <div key={appointment.appointment_id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{appointment.patientName}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                        <p className="font-medium text-foreground">{appointment.patient_data.patient_name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.appointment_notes}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-green-700">{appointment.time}</span>
+                        <span className="text-sm text-green-700">{formatTime(appointment.appointment_time)}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -356,18 +358,18 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   <Crown className="w-5 h-5 text-[#433CE7]" />
                   Subscription
                 </CardTitle>
-                <Badge className={subscriptionData?.subscriptionPlan?.plan_name === "Tier 1"
+                <Badge className={subscriptionData && subscriptionData?.subscriptionPlan?.plan_name === "Tier 1"
                   ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]"
                   : "bg-[#433CE7] text-white hover:bg-[#433CE7]"
                 }>
-                  {subscriptionData?.subscriptionPlan?.plan_name}
+                  {subscriptionData && subscriptionData?.subscriptionPlan?.plan_name}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  ${subscriptionData?.subscriptionPlan?.plan_price}
+                  ${subscriptionData && subscriptionData?.subscriptionPlan?.plan_price}
                 </p>
                 <p className="text-sm text-muted-foreground">per month</p>
               </div>
@@ -378,7 +380,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
-                  {subscriptionData?.subscriptionPlan?.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
+                  {subscriptionData && subscriptionData?.subscriptionPlan?.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
                 </Button>
                 <div className="flex items-center justify-center gap-4 text-xs">
                   <Button variant="link" className="p-0 h-auto text-muted-foreground underline">
@@ -444,7 +446,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   </div>
                 </div>
 
-                {billingAmount && parseFloat(billingAmount) > 0 && (
+                {billingAmount && billingAmount.length > 0 && parseFloat(billingAmount) > 0 && (
                   <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Gross:</span>
@@ -464,7 +466,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
 
                 <Button
                   onClick={handleBillingSubmit}
-                  disabled={!billingAmount || parseFloat(billingAmount) <= 0 || isSubmittingBilling}
+                  disabled={!billingAmount || billingAmount.length > 0 || parseFloat(billingAmount) <= 0 || isSubmittingBilling}
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
@@ -485,7 +487,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  {availabilityData?.general_schedule?.totalHours}
+                  {availabilityData && availabilityData?.general_schedule?.totalHours}
                 </p>
                 <p className="text-sm text-muted-foreground">hours this week</p>
               </div>
@@ -493,15 +495,15 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Minimum Required:</span>
-                  <span className="font-medium text-foreground">{availabilityData?.general_schedule?.minimumRequired}h</span>
+                  <span className="font-medium text-foreground">{availabilityData && availabilityData?.general_schedule?.minimumRequired}h</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData && availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
+                    {availabilityData && availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
                   </Badge>
                 </div>
               </div>
