@@ -4,10 +4,12 @@ import dashboardReducer from '../reduxSlice/dashboardSlice'
 import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import userReducer from '../reduxSlice/userSlice'
+import socketReducer from '../reduxSlice/socketSlice'
 
 const rootReducer = combineReducers({
   dashboard: dashboardReducer,
   user: userReducer,
+  socket: socketReducer,
 })
 
 const persistConfig = {

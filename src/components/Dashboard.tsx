@@ -17,6 +17,10 @@ import { formatTime } from "@/utils/formatDateTime";
 import { setAvailabilityData, setSubscriptionData, setTodayAppointments } from "@/reduxSlice/dashboardSlice";
 import { IAppointment } from "@/utils/datatypes";
 
+// checking socket implementation
+import { socketManager } from '@/http/socket';
+import { setConnected, setLastMessage } from '@/reduxSlice/socketSlice';
+
 interface DashboardProps {
   onShowPlanUpgrade?: () => void;
   onNavigateToCalendar?: () => void;
@@ -27,32 +31,8 @@ interface DashboardProps {
   };
 }
 
-// Mock data - would come from API in real app
-const MOCK_DATA = {
-  completedAppointments: [
-    {
-      id: 4,
-      patientName: "John Miller",
-      time: "8:00 AM",
-      status: "completed",
-      type: "Emergency Visit",
-      date: "Tuesday, August 12, 2025",
-      email: "john.miller@email.com",
-      phone: "+1 234 567 8903",
-      issueReported: "Emergency dental pain",
-      painLevel: "8/10",
-      notes: "Sudden onset of severe pain during the night."
-    }
-  ],
-  availability: {
-    isEnabled: true,
-    weeklyHours: 14,
-    minimumRequired: 12
-  },
-  billing: {
-    technologyFeeRate: 0.0425
-  }
-};
+const MINIMUM_REQUIRED_HOURS = 12;
+const PLATFORM_FEE_RATE = 0.0425;
 
 export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubscription }: DashboardProps) {
   const [billingAmount, setBillingAmount] = useState('');
@@ -64,10 +44,34 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
   const subscriptionData = useSelector((state: RootState) => state.dashboard.subscriptionData);
   const availabilityData = useSelector((state: RootState) => state.dashboard.availabilityData);
   const [completedAppointments, setCompletedAppointments] = useState<IAppointment[]>([]);
-  console.log("availabilityData---66", availabilityData);
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.user);
-  const data = MOCK_DATA;
+
+  const isConnected = useSelector((state: RootState) => state.socket.isConnected);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      socketManager.connect(token);
+      
+      socketManager.on('connect', () => {
+        dispatch(setConnected(true));
+      });
+
+      socketManager.on('disconnect', () => {
+        dispatch(setConnected(false));
+      });
+
+      socketManager.on('dashboard_data', (data) => {
+        dispatch(setLastMessage(data));
+        // Update dashboard data
+      });
+    }
+
+    return () => {
+      socketManager.disconnect();
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     fetchTodayAppointments();
@@ -82,7 +86,6 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
       const axiosResponse = await exe.execute();
       const apiBody = axiosResponse?.data;
       const dashboardData = apiBody?.data ?? apiBody;
-      console.log("dashboardData---84", dashboardData);
       if (axiosResponse.status >= 200 && axiosResponse.status < 300 && dashboardData) {
         dispatch(setSubscriptionData(dashboardData.subscriptionData));
         dispatch(setAvailabilityData(dashboardData.availabilityData));
@@ -117,7 +120,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
-  const technologyFee = billingAmount ? parseFloat(billingAmount) * data.billing.technologyFeeRate : 0;
+  const technologyFee = billingAmount ? parseFloat(billingAmount) * PLATFORM_FEE_RATE : 0;
   const netAmount = billingAmount ? parseFloat(billingAmount) - technologyFee : 0;
 
   const handleBillingSubmit = async () => {
@@ -242,15 +245,15 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Weekly Hours:</span>
-                  <span className="font-medium text-foreground">{data.availability.weeklyHours}</span>
+                  <span className="font-medium text-foreground">{availabilityData?.general_schedule?.totalHours}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Below Minimum"}
+                    {availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS ? "Compliant" : "Below Minimum"}
                   </Badge>
                 </div>
               </div>
@@ -499,20 +502,20 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={availabilityData && availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData && availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {availabilityData && availabilityData?.general_schedule?.totalHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
+                    {availabilityData && availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS ? "Compliant" : "Action Needed"}
                   </Badge>
                 </div>
               </div>
 
-              {availabilityData?.general_schedule?.totalHours < data.availability.minimumRequired && (
+              {availabilityData?.general_schedule?.totalHours < MINIMUM_REQUIRED_HOURS && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertTriangle className="w-4 h-4 text-red-600" />
                   <AlertDescription className="text-red-800 text-sm">
-                    Add {data.availability.minimumRequired - availabilityData?.general_schedule?.totalHours} more hours to maintain visibility.
+                    Add {MINIMUM_REQUIRED_HOURS - availabilityData?.general_schedule?.totalHours} more hours to maintain visibility.
                   </AlertDescription>
                 </Alert>
               )}
