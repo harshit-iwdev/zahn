@@ -20,7 +20,6 @@ interface ProfileFinalizationProps {
 
 export function ProfileFinalization({ onComplete, profileData }: ProfileFinalizationProps) {
   const navigate = useNavigate();
-  console.log('profileData---22', profileData);
   const profileFinalizationRef = useRef(null);
   const [files, setFiles] = useState({
     medicalLicense: null as File | null,

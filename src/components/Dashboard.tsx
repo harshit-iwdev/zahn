@@ -67,10 +67,6 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
         // Update dashboard data
       });
     }
-
-    return () => {
-      socketManager.disconnect();
-    };
   }, [dispatch]);
 
   useEffect(() => {

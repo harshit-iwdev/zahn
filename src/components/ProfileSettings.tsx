@@ -21,6 +21,7 @@ import { setIsAuthenticated, setLoginUserData } from "@/reduxSlice/userSlice";
 import { ROUTES } from "@/routes";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/redux/hooks";
+import { socketManager } from "@/http/socket";
 
 interface ProfileSettingsProps {
   onShowPlanUpgrade?: () => void;
@@ -263,22 +264,16 @@ export function ProfileSettings({ onLogout, currentSubscription }: ProfileSettin
   };
 
   const handleLogout = () => {
-    // if (onLogout) {
-    //   onLogout();
-    // }
-
-      // setShowPlanUpgrade(false);
-      dispatch(setLoginUserData({}));
-      dispatch(setIsAuthenticated(false));
-      localStorage.removeItem('access_token');
-      navigate(ROUTES.LOGIN);
+    socketManager.disconnect();
+    dispatch(setLoginUserData({}));
+    dispatch(setIsAuthenticated(false));
+    localStorage.removeItem('access_token');
+    navigate(ROUTES.LOGIN);
   };
 
   const handleDeleteAccount = () => {
     // Implement account deletion logic here
-    if (onLogout) {
-      onLogout(); // Log out after deleting account
-    }
+    handleLogout();
   };
 
   const handleSpecialitySelect = (specialty: string) => {

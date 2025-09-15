@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { apiUrl } from '../../config/config';
+import { toast } from 'react-toastify';
 
 class SocketManager {
   private socket: Socket | null = null;
@@ -44,6 +45,36 @@ class SocketManager {
 
     this.socket.on('dashboard_data', (data) => {
       console.log('Dashboard data received:', data);
+      // toast message
+      toast.info(data.message, {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: 'light',
+      });
+
+      // Dispatch to Redux store here
+    });
+
+    this.socket.on('se_appointment_update', (data) => {
+      console.log('Send appointment update received:', data);
+
+      // toast message
+      toast.success(data.notification.message, {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: 'light',
+      });
+
       // Dispatch to Redux store here
     });
 
