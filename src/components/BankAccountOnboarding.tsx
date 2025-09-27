@@ -7,37 +7,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { executor } from "@/http/executer/index";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { ROUTES } from "@/routes";
 import { useNavigate } from "react-router-dom";
+import { generateHashValue } from "@/http/encryption";
 
 interface BankAccountOnboardingProps {
   onComplete: (bankData: any) => void;
-  onBack: () => void;
 }
 
-export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboardingProps) {
+export function BankAccountOnboarding({ onComplete }: BankAccountOnboardingProps) {
   const bankAccountOnboardingRef = useRef(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    accountHolderName: '',
-    routingNumber: '',
-    accountNumber: '',
-    accountType: '',
-    bankName: ''
-  });
+    bank_account_holder_name: '',
+    bank_account_number: '',
+    bank_account_routing_number: '',
+    bank_account_type: '',
+    bank_name: ''
+  });  
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isFormValid = () => {
-    return formData.accountHolderName.trim() &&
-           formData.routingNumber.trim() &&
-           formData.accountNumber.trim() &&
-           formData.accountType &&
-           formData.bankName.trim() &&
-           formData.routingNumber.length === 9 &&
-           formData.accountNumber.length >= 4;
+    return formData.bank_account_holder_name.trim() &&
+           formData.bank_account_routing_number.trim() &&
+           formData.bank_account_number.trim() &&
+           formData.bank_account_type &&
+           formData.bank_name.trim() &&
+           formData.bank_account_routing_number.length === 9 &&
+           formData.bank_account_number.length >= 4;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -48,39 +48,39 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
   const handleRoutingNumberChange = (value: string) => {
     // Only allow numeric input and limit to 9 digits
     const numericValue = value.replace(/\D/g, '').slice(0, 9);
-    handleInputChange('routingNumber', numericValue);
+    handleInputChange('bankRoutingNumber', numericValue);
   };
 
   const handleAccountNumberChange = (value: string) => {
     // Only allow numeric input and limit to reasonable length
     const numericValue = value.replace(/\D/g, '').slice(0, 17);
-    handleInputChange('accountNumber', numericValue);
+    handleInputChange('bankAccountNumber', numericValue);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.accountHolderName.trim()) {
+    if (!formData.bank_account_holder_name.trim()) {
       setError('Please enter the account holder name');
       return;
     }
     
-    if (!formData.routingNumber.trim() || formData.routingNumber.length !== 9) {
+    if (!formData.bank_account_routing_number.trim() || formData.bank_account_routing_number.length !== 9) {
       setError('Please enter a valid 9-digit routing number');
       return;
     }
     
-    if (!formData.accountNumber.trim() || formData.accountNumber.length < 4) {
+    if (!formData.bank_account_number.trim() || formData.bank_account_number.length < 4) {
       setError('Please enter a valid account number');
       return;
     }
     
-    if (!formData.accountType) {
+    if (!formData.bank_account_type) {
       setError('Please select an account type');
       return;
     }
     
-    if (!formData.bankName.trim()) {
+    if (!formData.bank_name.trim()) {
       setError('Please enter your bank name');
       return;
     }
@@ -90,13 +90,20 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
 
     try {
       // calling bank account onboarding API
-      const url = USER_ENDPOINT.BANK_ACCOUNT;
+      const url = DENTIST_ENDPOINT.BANK_ACCOUNT;
       const exe = executor("post", url);
-      bankAccountOnboardingRef.current = exe;
-      const response = await bankAccountOnboardingRef.current.execute(formData);
+      const body = {
+        bank_account_holder_name: await generateHashValue(formData.bank_account_holder_name),
+        bank_account_number: await generateHashValue(formData.bank_account_number),
+        bank_account_routing_number: await generateHashValue(formData.bank_account_routing_number),
+        bank_account_type: formData.bank_account_type,
+        bank_name: await generateHashValue(formData.bank_name),
+      }
+      const response = await exe.execute(body);
       console.log(response);
       console.log('Bank account data:', formData);
-      onComplete(formData);
+      const responseData = response.data;
+      onComplete(responseData);
     } catch (err) {
       setError('Failed to save banking information. Please try again.');
     } finally {
@@ -155,8 +162,8 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                   <Input
                     id="accountHolderName"
                     type="text"
-                    value={formData.accountHolderName}
-                    onChange={(e) => handleInputChange('accountHolderName', e.target.value)}
+                    value={formData.bank_account_holder_name}
+                    onChange={(e) => handleInputChange('bank_account_holder_name', e.target.value)}
                     placeholder="Enter full name as it appears on your account"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="name"
@@ -174,7 +181,7 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                     id="routingNumber"
                     type="text"
                     inputMode="numeric"
-                    value={formData.routingNumber}
+                    value={formData.bank_account_routing_number}
                     onChange={(e) => handleRoutingNumberChange(e.target.value)}
                     placeholder="9-digit routing number"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
@@ -197,7 +204,7 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                     id="accountNumber"
                     type="text"
                     inputMode="numeric"
-                    value={formData.accountNumber}
+                    value={formData.bank_account_number}
                     onChange={(e) => handleAccountNumberChange(e.target.value)}
                     placeholder="Enter your account number"
                     className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
@@ -214,7 +221,7 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                 <Label className="text-foreground">
                   Account Type *
                 </Label>
-                <Select value={formData.accountType} onValueChange={(value) => handleInputChange('accountType', value)}>
+                <Select value={formData.bank_account_type} onValueChange={(value) => handleInputChange('bank_account_type', value)}>
                   <SelectTrigger className="h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1">
                     <SelectValue placeholder="Select account type" />
                   </SelectTrigger>
@@ -245,8 +252,8 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                   <Input
                     id="bankName"
                     type="text"
-                    value={formData.bankName}
-                    onChange={(e) => handleInputChange('bankName', e.target.value)}
+                    value={formData.bank_name}
+                    onChange={(e) => handleInputChange('bank_name', e.target.value)}
                     placeholder="Enter your bank name"
                     className="pl-12 h-14 bg-input-background border-border rounded-xl focus:border-[#433CE7] focus:ring-[#433CE7] focus:ring-1 transition-all"
                     autoComplete="organization"
@@ -275,7 +282,6 @@ export function BankAccountOnboarding({ onComplete, onBack }: BankAccountOnboard
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  // onClick={() => navigate(ROUTES.ONBOARDING.CLINIC)}
                   className="text-muted-foreground hover:text-[#433CE7] transition-colors underline"
                 >
                   Go back

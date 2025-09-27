@@ -1,9 +1,14 @@
 export const AUTH_BASE = "/api/v1/auth";
 export const ONBOARDING_BASE = "/api/v1/onboarding";
-export const COMPANY = "/company"
-export const CART = "/cart"
-export const SERVICES = "/subscriptionPlan"
-export const USER_ENDPOINT = {
+export const BANK_ACCOUNT_BASE = "/api/v1/bank-account";
+export const APPOINTMENTS_BASE = "/api/v1/appointments";
+export const COMPANY = "/company";
+export const CART = "/cart";
+export const SERVICES = "/subscriptionPlan";
+export const DASHBOARD_BASE = "/api/v1/dashboard";
+export const NOTIFICATIONS_BASE = "/api/v1/notifications";
+export const USERS_BASE = "/api/v1/users";
+export const DENTIST_ENDPOINT = {
   // Auth_BASE
   LOGIN: `${AUTH_BASE}/login`,
   REGISTER: `${AUTH_BASE}/register`,
@@ -12,15 +17,40 @@ export const USER_ENDPOINT = {
   VERIFY_OTP: `${AUTH_BASE}/verify-otp`,
   RESET_PASSWORD: `${AUTH_BASE}/reset-password`,
   UPDATE_PROFILE: "user/profile",
-  CHANGE_PASSWORD: "/user/change-password",
 
   // Onboarding
   CLINIC: `${ONBOARDING_BASE}/clinic`,
   BANK_ACCOUNT: `${ONBOARDING_BASE}/bank-account`,
-  AVAILABILITY: `${ONBOARDING_BASE}/availability`,
-  SUBSCRIPTION: `${ONBOARDING_BASE}/subscription`,
-  TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-and-conditions`,
+  AVAILABILITY: `${ONBOARDING_BASE}/availability-timings`,
+  GET_SUBSCRIPTION_PLANS: `${ONBOARDING_BASE}/subscription-plans/get-all`,
+  SELECT_SUBSCRIPTION_PLAN: `${ONBOARDING_BASE}/subscription-plans/select`,
+  TERMS_AND_CONDITIONS: `${ONBOARDING_BASE}/terms-agreement`,
+  DOCUMENT_UPLOAD: `${ONBOARDING_BASE}/upload-documents`,
   PROFILE_FINALIZATION: `${ONBOARDING_BASE}/profile-finalization`,
+
+  // Appointments
+  TODAY_APPOINTMENTS: `${APPOINTMENTS_BASE}/today`,
+  CONFIRM_APPOINTMENT: `${APPOINTMENTS_BASE}/confirmation`,
+  UPDATE_APPOINTMENT_AVAILABILITY: `${APPOINTMENTS_BASE}/set-availability`,
+  GET_BOOKINGS_BY_PARAMETERS: `${APPOINTMENTS_BASE}/bookings-by-date-range`,
+
+  // Dentist Availability Schedule
+  GET_DENTIST_AVAILABILITY_SCHEDULE: `${USERS_BASE}/availability-schedule`,
+  UPDATE_DENTIST_AVAILABILITY_SCHEDULE: `${USERS_BASE}/update-schedule`,
+
+  // Bank Account
+  UPDATE_BANK_DATA: `${ONBOARDING_BASE}/update-bank-data`,
+
+  // User Profile
+  UPDATE_USER_PROFILE: `${ONBOARDING_BASE}/update-user-details`,
+
+  // Dashboard
+  GET_DASHBOARD: `${DASHBOARD_BASE}/`,
+
+  // User Subscription
+  USER_SUBSCRIPTION: `${APPOINTMENTS_BASE}/user-subscription`,
+  UPGRADE_SUBSCRIPTION: `${USERS_BASE}/upgrade-subscription`,
+  GET_EARNING_SUMMARY: `${USERS_BASE}/earnings-summary`,
 
   // Authenticate User routes endpoint
   ACTIVITY: `/activity`,
@@ -44,13 +74,20 @@ export const USER_ENDPOINT = {
   GET_PLANS: `${SERVICES}/get-plans`,
 
   //Orders Get Service and subscription
-
   PURCHASED_SERVICES: "/order",
   DISTINCT_SERVICES: "/order/distinct",
   PAYMENT_CHECKOUT: "/payment/create-checkout-session",
+  
   //Notification
-  GET_NOTIFICATION: "/notification",
-  READ_NOTIFICATION: "/notification/mark-read"
+  GET_NOTIFICATIONS: `${NOTIFICATIONS_BASE}/get-all`,
+  MARK_READ_NOTIFICATION: `${NOTIFICATIONS_BASE}/mark-read/`,
+  MARK_ALL_READ_NOTIFICATION: `${NOTIFICATIONS_BASE}/mark-all-read`,
+
+  //User
+  GET_DENTIST_PROFILE: `${USERS_BASE}/dentist-profile`,
+  CHANGE_PASSWORD: `${USERS_BASE}/update-password`,
+  CHANGE_GENERAL_SETTINGS: `${USERS_BASE}/update-settings`,
+
 };
 
 const ADMIN_BASE = "/admin"

@@ -1,68 +1,66 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Crown, Star, Check, ArrowLeft, CreditCard, Zap, MessageCircle, BarChart3, Users, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import { executor } from "@/http/executer";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 
 interface PlanUpgradeProps {
-  onUpgrade: () => void;
-  onBack: () => void;
+  onUpgrade?: () => void;
+  onPlansClose: () => void;
   currentPlan: {
-    tier: string;
-    planName: string;
-    monthlyPrice: number;
+    plan_id: string;
+    plan_name: string;
+    plan_description: string;
+    plan_price: number;
+    plan_duration: number;
+    plan_duration_type: string;
+    plan_features: string[];
+    plan_is_active: boolean;
+    plan_created_at: Date;
+    plan_updated_at: Date;
   };
 }
 
-const PLAN_DATA = {
-  tier1: {
-    name: 'Tier 1 - Basic',
-    price: 199,
-    description: 'Perfect for growing practices',
-    features: [
-      'Basic platform access',
-      'Listed in patient-facing search',
-      'Up to 5 new-patient bookings/month',
-      'Real-time calendar sync (coming soon)',
-      'Basic profile with contact info',
-      'Standard search ranking'
-    ],
-    limitations: [
-      '5 booking limit per month',
-      'Standard search visibility',
-      'Basic profile features only'
-    ]
-  },
-  tier2: {
-    name: 'Tier 2 - Premium',
-    price: 599,
-    description: 'For established practices seeking growth',
-    features: [
-      'Unlimited new-patient bookings',
-      'Priority in search results',
-      'Enhanced profile (photos, videos, reviews)',
-      'Direct patient messaging',
-      'Advanced analytics & marketing insights',
-      'Recall & retention tools',
-      'Premium search placement',
-      'Patient review management',
-      'Marketing campaign tools'
-    ],
-    limitations: []
-  }
-};
-
-export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps) {
+export function PlanUpgrade({ onPlansClose, currentPlan }: PlanUpgradeProps) {
+  console.log('currentPlan', currentPlan);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState([]);
+
+  useEffect(() => {
+    fetchAvailablePlans();
+  }, []);
+
+  const fetchAvailablePlans = async () => {
+    try {
+      const url = DENTIST_ENDPOINT.GET_SUBSCRIPTION_PLANS;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && axiosResponse.data.success) {
+        setAvailablePlans(axiosResponse.data.data);
+      } else {
+        console.log('Failed to fetch available plans');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleUpgrade = async () => {
     setIsUpgrading(true);
     try {
-      // Simulate API call for upgrade
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const url = DENTIST_ENDPOINT.UPGRADE_SUBSCRIPTION;
+      const exe = executor("put", url);
+      const response = await exe.execute({
+        plan_id: upgradePlanData.plan_id,
+        plan_name: upgradePlanData.plan_name,
+      });
+      const responseData = response.data;
+      console.log('responseData---93', responseData);
       console.log('Plan upgraded to Tier 2');
-      onUpgrade();
+      onPlansClose();
     } catch (error) {
       console.error('Failed to upgrade plan:', error);
     } finally {
@@ -70,11 +68,14 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
     }
   };
 
-  const currentPlanData = PLAN_DATA.tier1;
-  const upgradePlanData = PLAN_DATA.tier2;
+  const currentPlanData = availablePlans.find(plan => plan.plan_id === currentPlan.plan_id);
+  const upgradePlanData = availablePlans.find(plan => plan.plan_id !== currentPlan.plan_id);
+  if (!currentPlanData || !upgradePlanData) {
+    return;
+  }
   const monthlySavings = 0; // Could show annual savings here
-  const upgradeFeatures = upgradePlanData.features.filter(feature => 
-    !currentPlanData.features.includes(feature)
+  const upgradeFeatures = upgradePlanData.plan_features.filter(feature => 
+    !currentPlanData.plan_features.includes(feature)
   );
 
   return (
@@ -86,11 +87,11 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
             <Button
               variant="outline"
               size="sm"
-              onClick={onBack}
+              onClick={onPlansClose}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back
             </Button>
           </div>
           <div className="flex items-center gap-3 mb-4">
@@ -122,11 +123,11 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
               <div className="mb-4">
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold text-foreground">
-                    ${currentPlanData.price}
+                    ${currentPlanData.plan_price}
                   </span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
-                <p className="text-muted-foreground">{currentPlanData.description}</p>
+                <p className="text-muted-foreground">{currentPlanData.plan_description}</p>
               </div>
             </CardHeader>
             
@@ -134,7 +135,7 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
               {/* Current Features */}
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground">What you have:</h4>
-                {currentPlanData.features.map((feature, index) => (
+                {currentPlanData.plan_features.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <Check className="w-4 h-4 mt-0.5 text-green-600 flex-shrink-0" />
                     <span className="text-sm text-foreground">{feature}</span>
@@ -145,9 +146,9 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
               <Separator />
 
               {/* Current Limitations */}
-              <div className="space-y-3">
+              {/* <div className="space-y-3">
                 <h4 className="font-medium text-foreground">Current limitations:</h4>
-                {currentPlanData.limitations.map((limitation, index) => (
+                {currentPlanData.plan_limitations.map((limitation, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <div className="w-4 h-4 mt-0.5 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
                       <div className="w-2 h-2 rounded-full bg-orange-500" />
@@ -155,7 +156,7 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
                     <span className="text-sm text-muted-foreground">{limitation}</span>
                   </div>
                 ))}
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
@@ -178,14 +179,14 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
               <div className="mb-4">
                 <div className="flex items-baseline gap-2 mb-2">
                   <span className="text-3xl font-bold text-[#433CE7]">
-                    ${upgradePlanData.price}
+                    ${upgradePlanData.plan_price}
                   </span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
-                <p className="text-muted-foreground">{upgradePlanData.description}</p>
+                <p className="text-muted-foreground">{upgradePlanData.plan_description}</p>
                 <div className="mt-2 p-2 bg-[#433CE7]/10 rounded-lg">
                   <p className="text-sm text-[#433CE7] font-medium">
-                    Upgrade for +${upgradePlanData.price - currentPlanData.price}/month
+                    Upgrade for +${upgradePlanData.plan_price - currentPlanData.plan_price}/month
                   </p>
                 </div>
               </div>
@@ -275,7 +276,7 @@ export function PlanUpgrade({ onUpgrade, onBack, currentPlan }: PlanUpgradeProps
               
               <Button
                 variant="outline"
-                onClick={onBack}
+                onClick={onPlansClose}
                 className="border-[#433CE7]/20 text-[#433CE7] hover:bg-[#E5E3FB]/30"
               >
                 Maybe Later

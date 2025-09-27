@@ -15,7 +15,7 @@ import { MyBookings } from '../components/MyBookings';
 import { Notifications } from '../components/Notifications';
 import { EarningsSummary } from '../components/EarningsSummary';
 import { ProfileSettings } from '../components/ProfileSettings';
-import { PlanUpgrade } from '../components/PlanUpgrade';
+// import { PlanUpgrade } from '../components/PlanUpgrade';
 
 // Props interfaces for route components
 export interface RouteComponentProps {
@@ -62,35 +62,30 @@ export const createRegistrationRoute = (props: RouteComponentProps) => (
 export const createClinicOnboardingRoute = (props: RouteComponentProps) => (
     <ClinicOnboarding
         onComplete={props.onClinicComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createBankAccountOnboardingRoute = (props: RouteComponentProps) => (
     <BankAccountOnboarding
         onComplete={props.onBankComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createAvailabilitySetupRoute = (props: RouteComponentProps) => (
     <AvailabilitySetup
         onComplete={props.onAvailabilityComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createSubscriptionPlanSelectionRoute = (props: RouteComponentProps) => (
     <SubscriptionPlanSelection
         onComplete={props.onSubscriptionComplete!}
-        onBack={props.onBack!}
     />
 );
 
 export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
     <TermsAndConditions
         onComplete={(data: any) => props.onTermsComplete!(data)}
-        onBack={props.onBack!}
         profileData={props.profileData!}
     />
 );
@@ -98,7 +93,6 @@ export const createTermsAndConditionsRoute = (props: RouteComponentProps) => (
 export const createProfileFinalizationRoute = (props: RouteComponentProps) => (
     <ProfileFinalization
         onComplete={props.onProfileFinalizeComplete!}
-        onBack={props.onBack!}
         profileData={props.profileData!}
     />
 );
@@ -144,9 +138,10 @@ export const createProfileSettingsRoute = (props: RouteComponentProps) => (
 );
 
 export const createPlanUpgradeRoute = (props: RouteComponentProps) => (
-    <PlanUpgrade
-        onUpgrade={props.onPlanUpgradeComplete!}
-        onBack={props.onPlanUpgradeBack!}
-        currentPlan={props.currentSubscription!}
-    />
+    // <PlanUpgrade
+    //     onUpgrade={props.onPlanUpgradeComplete!}
+    //     onBack={props.onPlanUpgradeBack!}
+    //     currentPlan={props.currentSubscription!}
+    // />
+    <></>
 ); 

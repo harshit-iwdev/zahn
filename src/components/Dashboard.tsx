@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Clock, User, AlertCircle, Crown, Upload, Calculator, CheckCircle, AlertTriangle, CreditCard, Bell, Settings, Eye } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -9,6 +9,17 @@ import { Badge } from "./ui/badge";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { AppointmentDetails } from "./AppointmentDetails";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
+import { executor } from "@/http/executer";
+import { formatTime } from "@/utils/formatDateTime";
+import { setAvailabilityData, setSubscriptionData, setTodayAppointments } from "@/reduxSlice/dashboardSlice";
+import { IAppointment } from "@/utils/datatypes";
+
+// checking socket implementation
+import { socketManager } from '@/http/socket';
+import { setConnected, setLastMessage } from '@/reduxSlice/socketSlice';
 
 interface DashboardProps {
   onShowPlanUpgrade?: () => void;
@@ -20,97 +31,92 @@ interface DashboardProps {
   };
 }
 
-// Mock data - would come from API in real app
-const MOCK_DATA = {
-  user: {
-    name: "Dr. Smith"
-  },
-  todayAppointments: [
-    {
-      id: 1,
-      patientName: "Sarah Johnson",
-      time: "9:00 AM",
-      status: "confirmed",
-      type: "Cleaning & Checkup",
-      date: "Tuesday, August 12, 2025",
-      email: "sarah.johnson@email.com",
-      phone: "+1 234 567 8900",
-      issueReported: "Annual checkup and blood pressure monitoring",
-      painLevel: "7/10",
-      uploadedPhoto: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=100&h=100&fit=crop",
-      notes: "Pain started 3 days ago, worsens while eating."
-    },
-    {
-      id: 2,
-      patientName: "Michael Chen",
-      time: "11:30 AM",
-      status: "pending",
-      type: "Root Canal",
-      date: "Tuesday, August 12, 2025",
-      email: "michael.chen@email.com",
-      phone: "+1 234 567 8901",
-      issueReported: "Severe tooth pain requiring root canal treatment",
-      painLevel: "9/10",
-      notes: "Tooth pain has been persistent for over a week."
-    },
-    {
-      id: 3,
-      patientName: "Emma Davis",
-      time: "2:00 PM",
-      status: "confirmed",
-      type: "Filling",
-      date: "Tuesday, August 12, 2025",
-      email: "emma.davis@email.com",
-      phone: "+1 234 567 8902",
-      issueReported: "Cavity needs filling on upper left molar",
-      painLevel: "4/10",
-      notes: "Minor sensitivity when eating sweets."
-    }
-  ],
-  completedAppointments: [
-    {
-      id: 4,
-      patientName: "John Miller",
-      time: "8:00 AM",
-      status: "completed",
-      type: "Emergency Visit",
-      date: "Tuesday, August 12, 2025",
-      email: "john.miller@email.com",
-      phone: "+1 234 567 8903",
-      issueReported: "Emergency dental pain",
-      painLevel: "8/10",
-      notes: "Sudden onset of severe pain during the night."
-    }
-  ],
-  availability: {
-    isEnabled: true,
-    weeklyHours: 14,
-    minimumRequired: 12
-  },
-  billing: {
-    technologyFeeRate: 0.0425
-  }
-};
+const MINIMUM_REQUIRED_HOURS = 12;
+const PLATFORM_FEE_RATE = 0.0425;
 
 export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubscription }: DashboardProps) {
-  const [availabilityEnabled, setAvailabilityEnabled] = useState(MOCK_DATA.availability.isEnabled);
   const [billingAmount, setBillingAmount] = useState('');
   const [billingFile, setBillingFile] = useState<File | null>(null);
   const [isSubmittingBilling, setIsSubmittingBilling] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<typeof MOCK_DATA.todayAppointments[0] | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
+  const todayAppointments = useSelector((state: RootState) => state.dashboard.todayAppointments);
+  const subscriptionData = useSelector((state: RootState) => state.dashboard.subscriptionData);
+  const availabilityData = useSelector((state: RootState) => state.dashboard.availabilityData);
+  const [completedAppointments, setCompletedAppointments] = useState<IAppointment[]>([]);
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user);
 
-  const data = MOCK_DATA;
+  const isConnected = useSelector((state: RootState) => state.socket.isConnected);
 
-  // Use current subscription data or fallback to mock data
-  const subscription = currentSubscription || {
-    tier: "tier1",
-    planName: "Tier 1",
-    monthlyPrice: 199
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      socketManager.connect(token);
+      
+      socketManager.on('connect', () => {
+        dispatch(setConnected(true));
+      });
+
+      socketManager.on('disconnect', () => {
+        dispatch(setConnected(false));
+      });
+
+      socketManager.on('dashboard_data', (data) => {
+        dispatch(setLastMessage(data));
+        // Update dashboard data
+      });
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchTodayAppointments();
+    fetchUserSubscription();
+  }, [user]);
+
+  const fetchUserSubscription = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.GET_DASHBOARD;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const dashboardData = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && dashboardData) {
+        dispatch(setSubscriptionData(dashboardData.subscriptionData));
+        dispatch(setAvailabilityData(dashboardData.availabilityData));
+        setCompletedAppointments(dashboardData.completedAppointmentsData);
+      } else {
+        console.log('Failed to fetch dashboard information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to fetch dashboard information. Please try again.');
+    } finally {
+      console.log('Dashboard data fetched successfully');
+    }
   };
 
-  const isTier1 = subscription.tier === "tier1";
-  const technologyFee = billingAmount ? parseFloat(billingAmount) * data.billing.technologyFeeRate : 0;
+  const fetchTodayAppointments = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.TODAY_APPOINTMENTS;
+      const exe = executor("get", url);
+      const axiosResponse = await exe.execute();
+      const apiBody = axiosResponse?.data;
+      const appointmentData = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && appointmentData) {
+        dispatch(setTodayAppointments(appointmentData));
+      } else {
+        console.log('Failed to fetch appointment today information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to fetch appointment today information. Please try again.');
+    } finally {
+      console.log('Appointment today data fetched successfully');
+    }
+  };
+
+  const technologyFee = billingAmount ? parseFloat(billingAmount) * PLATFORM_FEE_RATE : 0;
   const netAmount = billingAmount ? parseFloat(billingAmount) - technologyFee : 0;
 
   const handleBillingSubmit = async () => {
@@ -142,12 +148,13 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
-  const handleViewAppointmentDetails = (appointment: typeof MOCK_DATA.todayAppointments[0]) => {
+  const handleViewAppointmentDetails = (appointment: IAppointment) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetails(true);
   };
 
   const handleCloseAppointmentDetails = () => {
+    fetchTodayAppointments();
     setShowAppointmentDetails(false);
     setSelectedAppointment(null);
   };
@@ -161,13 +168,34 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
     }
   };
 
+  const handleAppointmentAvailability = async () => {
+    try {
+      // calling appointment today API
+      const url = DENTIST_ENDPOINT.UPDATE_APPOINTMENT_AVAILABILITY;
+      const body = {
+        acceptBookings: !availabilityData?.accept_new_bookings
+      };
+      const exe = executor("put", url);
+      const axiosResponse = await exe.execute(body);
+      const apiBody = axiosResponse?.data;
+      const availabilityResponse = apiBody?.data ?? apiBody;
+      if (axiosResponse.status >= 200 && axiosResponse.status < 300 && availabilityResponse.id === availabilityData?.id) {
+        dispatch(setAvailabilityData({ ...availabilityData, accept_new_bookings: !availabilityData?.accept_new_bookings }));
+      } else {
+        console.log('Failed to update availability information. Please try again.');
+      }
+    } catch (err) {
+      console.log('Failed to update availability information. Please try again.');
+    }
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-white">
       <div className="p-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-medium text-foreground mb-2">
-            Hello {data.user.name}
+            Hello {user.loginUserData.fullName}
           </h1>
           <p className="text-muted-foreground">
             Welcome back! Here's what's happening with your practice today.
@@ -178,7 +206,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
         <Alert className="mb-6 border-[#433CE7]/20 bg-[#E5E3FB]/30">
           <Bell className="w-5 h-5 text-[#433CE7]" />
           <AlertDescription className="text-[#433CE7] font-medium">
-            You have {data.todayAppointments.length} appointments today
+            You have {todayAppointments?.length} appointments today
           </AlertDescription>
         </Alert>
 
@@ -198,12 +226,12 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                 <div>
                   <p className="font-medium text-foreground">Accept New Bookings</p>
                   <p className="text-sm text-muted-foreground">
-                    {availabilityEnabled ? "Patients can book appointments" : "Booking is paused"}
+                    {availabilityData?.accept_new_bookings ? "Patients can book appointments" : "Booking is paused"}
                   </p>
                 </div>
                 <Switch
-                  checked={availabilityEnabled}
-                  onCheckedChange={setAvailabilityEnabled}
+                  checked={availabilityData?.accept_new_bookings}
+                  onCheckedChange={handleAppointmentAvailability}
                   className="data-[state=checked]:bg-[#433CE7]"
                 />
               </div>
@@ -213,15 +241,15 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Weekly Hours:</span>
-                  <span className="font-medium text-foreground">{data.availability.weeklyHours}</span>
+                  <span className="font-medium text-foreground">{availabilityData?.general_schedule?.totalHours}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Below Minimum"}
+                    {availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS ? "Compliant" : "Below Minimum"}
                   </Badge>
                 </div>
               </div>
@@ -247,21 +275,21 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.todayAppointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
+                { todayAppointments && todayAppointments.length > 0 && todayAppointments?.map((appointment: IAppointment) => (
+                  <div key={appointment.appointment_id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-10 h-10 bg-[#E5E3FB] rounded-lg flex items-center justify-center">
                         <User className="w-5 h-5 text-[#433CE7]" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{appointment.patientName}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                        <p className="font-medium text-foreground">{appointment.patient_data.patient_name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.issue_reported}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-foreground">{appointment.time}</span>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
+                      <span className="text-sm font-medium text-foreground">{formatTime(appointment.appointment_time)}</span>
+                      <Badge className={getStatusColor(appointment.appointment_status)}>
+                        {appointment.appointment_status}
                       </Badge>
                       <Button
                         variant="outline"
@@ -276,7 +304,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   </div>
                 ))}
 
-                {data.todayAppointments.length === 0 && (
+                {todayAppointments && todayAppointments.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No appointments scheduled for today</p>
@@ -287,7 +315,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
           </Card>
 
           {/* Completed Appointments Preview */}
-          {data.completedAppointments.length > 0 && (
+          {completedAppointments && completedAppointments.length > 0 && (
             <Card className="xl:col-span-1">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
@@ -297,14 +325,14 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {data.completedAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  {completedAppointments.map((appointment: IAppointment) => (
+                    <div key={appointment.appointment_id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{appointment.patientName}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                        <p className="font-medium text-foreground">{appointment.patient_data.patient_name}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.appointment_notes}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-green-700">{appointment.time}</span>
+                        <span className="text-sm text-green-700">{formatTime(appointment.appointment_time)}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -329,18 +357,18 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   <Crown className="w-5 h-5 text-[#433CE7]" />
                   Subscription
                 </CardTitle>
-                <Badge className={isTier1
+                <Badge className={subscriptionData && subscriptionData?.subscriptionPlan?.plan_name === "Tier 1"
                   ? "bg-[#E5E3FB] text-[#433CE7] hover:bg-[#E5E3FB]"
                   : "bg-[#433CE7] text-white hover:bg-[#433CE7]"
                 }>
-                  {subscription.planName}
+                  {subscriptionData && subscriptionData?.subscriptionPlan?.plan_name}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  ${subscription.monthlyPrice}
+                  ${subscriptionData && subscriptionData?.subscriptionPlan?.plan_price}
                 </p>
                 <p className="text-sm text-muted-foreground">per month</p>
               </div>
@@ -351,7 +379,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
-                  {isTier1 ? "Upgrade Plan" : "Manage Plan"}
+                  {subscriptionData && subscriptionData?.subscriptionPlan?.plan_name === "Tier 1" ? "Upgrade Plan" : "Manage Plan"}
                 </Button>
                 <div className="flex items-center justify-center gap-4 text-xs">
                   <Button variant="link" className="p-0 h-auto text-muted-foreground underline">
@@ -417,7 +445,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
                   </div>
                 </div>
 
-                {billingAmount && parseFloat(billingAmount) > 0 && (
+                {billingAmount && billingAmount.length > 0 && parseFloat(billingAmount) > 0 && (
                   <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Gross:</span>
@@ -437,7 +465,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
 
                 <Button
                   onClick={handleBillingSubmit}
-                  disabled={!billingAmount || parseFloat(billingAmount) <= 0 || isSubmittingBilling}
+                  disabled={!billingAmount || billingAmount.length > 0 || parseFloat(billingAmount) <= 0 || isSubmittingBilling}
                   className="w-full bg-[#433CE7] hover:bg-[#3730a3] text-white"
                   size="sm"
                 >
@@ -458,7 +486,7 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
             <CardContent className="space-y-4">
               <div className="text-center p-4 bg-[#E5E3FB]/20 rounded-lg">
                 <p className="text-2xl font-bold text-[#433CE7]">
-                  {data.availability.weeklyHours}
+                  {availabilityData && availabilityData?.general_schedule?.totalHours}
                 </p>
                 <p className="text-sm text-muted-foreground">hours this week</p>
               </div>
@@ -466,24 +494,24 @@ export function Dashboard({ onShowPlanUpgrade, onNavigateToCalendar, currentSubs
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Minimum Required:</span>
-                  <span className="font-medium text-foreground">{data.availability.minimumRequired}h</span>
+                  <span className="font-medium text-foreground">{availabilityData && availabilityData?.general_schedule?.minimumRequired}h</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Status:</span>
-                  <Badge className={data.availability.weeklyHours >= data.availability.minimumRequired
+                  <Badge className={availabilityData && availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
                     : "bg-red-100 text-red-800 hover:bg-red-100"
                   }>
-                    {data.availability.weeklyHours >= data.availability.minimumRequired ? "Compliant" : "Action Needed"}
+                    {availabilityData && availabilityData?.general_schedule?.totalHours >= MINIMUM_REQUIRED_HOURS ? "Compliant" : "Action Needed"}
                   </Badge>
                 </div>
               </div>
 
-              {data.availability.weeklyHours < data.availability.minimumRequired && (
+              {availabilityData?.general_schedule?.totalHours < MINIMUM_REQUIRED_HOURS && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertTriangle className="w-4 h-4 text-red-600" />
                   <AlertDescription className="text-red-800 text-sm">
-                    Add {data.availability.minimumRequired - data.availability.weeklyHours} more hours to maintain visibility.
+                    Add {MINIMUM_REQUIRED_HOURS - availabilityData?.general_schedule?.totalHours} more hours to maintain visibility.
                   </AlertDescription>
                 </Alert>
               )}

@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../routes/index";
 import { setIsAuthenticated, setLoginUserData } from "../reduxSlice/userSlice";
 import { useDispatch } from "react-redux";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
 
 interface LoginProps {
@@ -69,20 +69,23 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     setIsLoading(true);
     setError('');
     
-    const url = USER_ENDPOINT.LOGIN;
+    const url = DENTIST_ENDPOINT.LOGIN;
     const exe = executor("post", url);
     loginRef.current = exe;
     try {
       // calling login API
       const response = await loginRef.current.execute({ email: formData.email, password: formData.password });
-      if (response && response.data.data.id && response.data.token) {
-        dispatch(setLoginUserData(response.data.data));
+      const responseData = response.data;
+      if (responseData && responseData.data.id && responseData.token) {
+        dispatch(setLoginUserData(responseData.data));
         dispatch(setIsAuthenticated(true));
-        localStorage.setItem('access_token', response.data.token);
-        if (response.data.data.onboardingCompleted) {
+        localStorage.setItem('access_token', responseData.token);
+        if (responseData.data.onboardingCompleted && responseData.data.onboardingStep === 8) {
           navigate(ROUTES.DASHBOARD);
-        } else if (!response.data.data.onboardingCompleted) {
-          navigateToOnboarding(response.data.data.onboardingStep);
+        } else if (!responseData.data.onboardingCompleted && responseData.data.onboardingStep < 8)  {
+          navigateToOnboarding(responseData.data.onboardingStep);
+        } else {
+          navigate(ROUTES.LOGIN);
         }
       } else {
         setError('Invalid email or password. Please try again.');
@@ -99,21 +102,24 @@ export function Login({ onLogin, onShowRegistration }: LoginProps) {
     switch (onboardingStep) {
       case 1:
         navigate(ROUTES.ONBOARDING.CLINIC);
-        break;
+        break;   
       case 2:
-        navigate(ROUTES.ONBOARDING.PROFILE);
-        break;
-      case 3:
         navigate(ROUTES.ONBOARDING.BANK);
         break;
-      case 4:
+      case 3:
         navigate(ROUTES.ONBOARDING.AVAILABILITY);
         break;
-      case 5:
+      case 4:
         navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
         break;
-      case 6:
+      case 5:
         navigate(ROUTES.ONBOARDING.TERMS);
+        break;
+      case 6:
+        navigate(ROUTES.ONBOARDING.PROFILE);
+        break;
+      case 7:
+        navigate(ROUTES.ONBOARDING.CONFIRMATION);
         break;
       default:
         navigate(ROUTES.LOGIN);

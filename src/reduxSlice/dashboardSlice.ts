@@ -9,6 +9,7 @@ interface DashboardInitialState {
     availabilityData: any;
     subscriptionData: any;
     agreementData: any;
+    todayAppointments: any;
 }
 
 const initialState: DashboardInitialState = {
@@ -20,6 +21,7 @@ const initialState: DashboardInitialState = {
     availabilityData: {},
     subscriptionData: {},
     agreementData: {},
+    todayAppointments: [],
 };
 
 export const dashboardSlice = createSlice({
@@ -40,11 +42,14 @@ export const dashboardSlice = createSlice({
         },
         setAgreementData: (state, action: PayloadAction<any>) => {
             state.agreementData = { ...action.payload }
+        },
+        setTodayAppointments: (state, action: PayloadAction<any>) => {
+            state.todayAppointments = [ ...action.payload ]
         }
     },
 });
 
 const dashboardReducer = dashboardSlice.reducer;
 
-export const { setClinicData, setBankData, setAvailabilityData, setSubscriptionData, setAgreementData } = dashboardSlice.actions;
+export const { setClinicData, setBankData, setAvailabilityData, setSubscriptionData, setAgreementData, setTodayAppointments } = dashboardSlice.actions;
 export default dashboardReducer;

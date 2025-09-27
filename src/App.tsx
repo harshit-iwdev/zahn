@@ -157,43 +157,13 @@ export default function App() {
     navigate(ROUTES.DASHBOARD);
   };
 
-  const handleProfileConfirmationLogOut = () => {
-    setIsAuthenticated(false);
-    setShowPlanUpgrade(false);
-    navigate(ROUTES.HOME);
-  };
-
-  const handleClinicOnboardingBack = () => {
-    navigate(ROUTES.REGISTER);
-  };
-
-  const handleBankAccountOnboardingBack = () => {
-    navigate(ROUTES.ONBOARDING.CLINIC);
-  };
-
-  const handleAvailabilitySetupBack = () => {
-    navigate(ROUTES.ONBOARDING.BANK);
-  };
-
-  const handleSubscriptionPlanSelectionBack = () => {
-    navigate(ROUTES.ONBOARDING.AVAILABILITY);
-  };
-
-  const handleTermsAndConditionsBack = () => {
-    navigate(ROUTES.ONBOARDING.SUBSCRIPTION);
-  };
-
-  const handleProfileFinalizationBack = () => {
-    navigate(ROUTES.ONBOARDING.TERMS);
-  };
-
-  const handleLogout = () => {
-    setShowPlanUpgrade(false);
-    dispatch(setLoginUserData({}));
-    dispatch(setIsAuthenticated(false));
-    localStorage.removeItem('access_token');
-    navigate(ROUTES.LOGIN);
-  };
+  // const handleLogout = () => {
+  //   setShowPlanUpgrade(false);
+  //   dispatch(setLoginUserData({}));
+  //   dispatch(setIsAuthenticated(false));
+  //   localStorage.removeItem('access_token');
+  //   navigate(ROUTES.LOGIN);
+  // };
 
   const handleShowRegistration = () => {
     navigate(ROUTES.REGISTER);
@@ -220,7 +190,7 @@ export default function App() {
       // Overridden per route where needed
     },
     onBackToHome: handleProfileConfirmationBackToHome,
-    onLogout: handleLogout,
+    // onLogout: handleLogout,
     onShowPlanUpgrade: handleShowPlanUpgrade,
     onPlanUpgradeComplete: handlePlanUpgradeComplete,
     onPlanUpgradeBack: handlePlanUpgradeBack,

@@ -6,7 +6,7 @@ import { Badge } from "./ui/badge";
 interface NotificationItemProps {
   notification: {
     id: string;
-    type: 'booking' | 'cancellation' | 'admin';
+    type: 'booking' | 'cancellation' | 'admin' | 'confirmed' | 'rejected';
     message: string;
     timestamp: string;
     isRead: boolean;
@@ -34,6 +34,10 @@ export function NotificationItem({ notification, onMarkRead }: NotificationItemP
     switch (notification.type) {
       case 'booking':
         return 'New Booking';
+      case 'confirmed':
+        return 'Confirmed';
+      case 'rejected':
+        return 'Rejected';
       case 'cancellation':
         return 'Cancellation';
       case 'admin':

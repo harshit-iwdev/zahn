@@ -6,15 +6,10 @@ import { PlanUpgrade } from "./PlanUpgrade";
 interface AuthenticatedLayoutProps {
   onLogout: () => void;
   onShowPlanUpgrade: () => void;
-  currentSubscription: {
-    tier: string;
-    planName: string;
-    monthlyPrice: number;
-    features: string[];
-  };
+  currentSubscription?: any;
   showPlanUpgrade: boolean;
-  onPlanUpgradeComplete: () => void;
-  onPlanUpgradeBack: () => void;
+  onPlanUpgradeComplete?: () => void;
+  onPlanUpgradeBack?: () => void;
 }
 
 export function AuthenticatedLayout({
@@ -47,11 +42,11 @@ export function AuthenticatedLayout({
           activeItem={activeItem}
           onItemSelect={setActiveItem}
         />
-        <PlanUpgrade
+        {/* <PlanUpgrade
           onUpgrade={onPlanUpgradeComplete}
           onBack={onPlanUpgradeBack}
           currentPlan={currentSubscription}
-        />
+        /> */}
       </div>
     );
   }

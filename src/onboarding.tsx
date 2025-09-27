@@ -12,10 +12,15 @@ import { ProfileSubmissionConfirmation } from "./components/ProfileSubmissionCon
 import { AuthenticatedLayout } from "./components/AuthenticatedLayout";
 import { setAgreementData, setAvailabilityData, setBankData, setClinicData, setSubscriptionData } from "./reduxSlice/dashboardSlice";
 import { useAppDispatch } from "./redux/hooks";
+import { ROUTES } from "./routes";
+import { useSelector } from "react-redux";
+import { RootState } from "./redux/store";
+import { setIsAuthenticated } from "./reduxSlice/userSlice";
 
 
 export default function OnboardingPage() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
+    // const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showRegistration, setShowRegistration] = useState(false);
     const [showClinicOnboarding, setShowClinicOnboarding] = useState(false);
     const [showBankAccountOnboarding, setShowBankAccountOnboarding] = useState(false);
@@ -48,15 +53,12 @@ export default function OnboardingPage() {
             totalHours: 0
         },
         subscription: {
-            tier: 'tier1', // Default to tier1 for existing users
-            planName: 'Tier 1',
-            monthlyPrice: 199,
-            features: [
-                'Basic platform access',
-                'Listed in patient-facing search',
-                'Up to 5 new-patient bookings/month',
-                'Standard search ranking'
-            ] as string[]
+            plan_id: '',
+            plan_name: '',
+            plan_price: 199,
+            plan_duration: 'month',
+            plan_duration_type: '',
+            plan_features: [],
         },
         agreements: {
             agreedToAllTerms: false,
@@ -67,7 +69,7 @@ export default function OnboardingPage() {
     });
 
     const handleLogin = () => {
-        setIsAuthenticated(true);
+        dispatch(setIsAuthenticated(true));
         setShowRegistration(false);
         setShowClinicOnboarding(false);
         setShowBankAccountOnboarding(false);
@@ -84,26 +86,21 @@ export default function OnboardingPage() {
         setShowPlanUpgrade(true);
     };
 
-    const handlePlanUpgradeComplete = () => {
-        // Update user's subscription to Tier 2
-        setProfileData(prev => ({
-            ...prev,
-            subscription: {
-                tier: 'tier2',
-                planName: 'Tier 2',
-                monthlyPrice: 599,
-                features: [
-                    'Unlimited new-patient bookings',
-                    'Priority search ranking',
-                    'Enhanced profile with photos & videos',
-                    'Direct patient messaging',
-                    'Advanced analytics & insights',
-                    'Premium customer support'
-                ]
-            }
-        }));
-        setShowPlanUpgrade(false);
-    };
+    // const handlePlanUpgradeComplete = () => {
+    //     // Update user's subscription to Tier 2
+    //     setProfileData(prev => ({
+    //         ...prev,
+    //         subscription: {
+    //             plan_id: '2',
+    //             plan_name: 'Tier 2',
+    //             plan_price: 599,
+    //             plan_duration: 0,
+    //             plan_duration_type: '',
+    //             plan_features: [],
+    //         }
+    //     }));
+    //     setShowPlanUpgrade(false);
+    // };
 
     const handlePlanUpgradeBack = () => {
         setShowPlanUpgrade(false);
@@ -185,23 +182,26 @@ export default function OnboardingPage() {
         setShowProfileFinalization(true);
     };
 
-    const handleProfileFinalizationComplete = () => {
+    const handleProfileFinalizationComplete = (profileData?: any) => {
+        if (profileData) {
+            setProfileData(prev => ({ ...prev, ...profileData }));
+        }
         setShowProfileFinalization(false);
         setShowProfileConfirmation(true);
         // API call to save profile finalization
-        navigate('/profile-submission-confirmation');
+        navigate(ROUTES.ONBOARDING.CONFIRMATION)
     };
 
     const handleProfileConfirmationBackToHome = () => {
         setShowProfileConfirmation(false);
-        setIsAuthenticated(true);
+        dispatch(setIsAuthenticated(true));
         // API call to save profile submission confirmation
         // navigate('/dashboard');
     };
 
     const handleProfileConfirmationLogOut = () => {
         setShowProfileConfirmation(false);
-        setIsAuthenticated(false);
+        dispatch(setIsAuthenticated(false));
 
         // Clear all data from the Redux store
         dispatch(setClinicData({}));
@@ -214,44 +214,8 @@ export default function OnboardingPage() {
         navigate('/login');
     };
 
-    const handleClinicOnboardingBack = () => {
-        setShowClinicOnboarding(false);
-        setShowRegistration(true);
-        navigate('/register');
-    };
-
-    const handleBankAccountOnboardingBack = () => {
-        setShowBankAccountOnboarding(false);
-        setShowClinicOnboarding(true);
-        navigate('/clinic-onboarding');
-    };
-
-    const handleAvailabilitySetupBack = () => {
-        setShowAvailabilitySetup(false);
-        setShowBankAccountOnboarding(true);
-        navigate('/bank-account-onboarding');
-    };
-
-    const handleSubscriptionPlanSelectionBack = () => {
-        setShowSubscriptionPlanSelection(false);
-        setShowAvailabilitySetup(true);
-        navigate('/availability-setup');
-    };
-
-    const handleTermsAndConditionsBack = () => {
-        setShowTermsAndConditions(false);
-        setShowSubscriptionPlanSelection(true);
-        navigate('/subscription-plan-selection');
-    };
-
-    const handleProfileFinalizationBack = () => {
-        setShowProfileFinalization(false);
-        setShowTermsAndConditions(true);
-        navigate('/terms-and-conditions');
-    };
-
     const handleLogout = () => {
-        setIsAuthenticated(false);
+        dispatch(setIsAuthenticated(false));
         setShowRegistration(false);
         setShowClinicOnboarding(false);
         setShowBankAccountOnboarding(false);
@@ -291,7 +255,6 @@ export default function OnboardingPage() {
         return (
             <ProfileFinalization
                 onComplete={handleProfileFinalizationComplete}
-                onBack={handleProfileFinalizationBack}
                 profileData={profileData}
             />
         );
@@ -302,7 +265,6 @@ export default function OnboardingPage() {
         return (
             <TermsAndConditions
                 onComplete={handleTermsAndConditionsComplete}
-                onBack={handleTermsAndConditionsBack}
                 profileData={profileData}
             />
         );
@@ -313,7 +275,6 @@ export default function OnboardingPage() {
         return (
             <SubscriptionPlanSelection
                 onComplete={handleSubscriptionPlanSelectionComplete}
-                onBack={handleSubscriptionPlanSelectionBack}
             />
         );
     }
@@ -323,7 +284,6 @@ export default function OnboardingPage() {
         return (
             <AvailabilitySetup
                 onComplete={handleAvailabilitySetupComplete}
-                onBack={handleAvailabilitySetupBack}
             />
         );
     }
@@ -333,7 +293,6 @@ export default function OnboardingPage() {
         return (
             <BankAccountOnboarding
                 onComplete={handleBankAccountOnboardingComplete}
-                onBack={handleBankAccountOnboardingBack}
             />
         );
     }
@@ -343,7 +302,6 @@ export default function OnboardingPage() {
         return (
             <ClinicOnboarding
                 onComplete={handleClinicOnboardingComplete}
-                onBack={handleClinicOnboardingBack}
             />
         );
     }
@@ -373,9 +331,9 @@ export default function OnboardingPage() {
         <AuthenticatedLayout
             onLogout={handleLogout}
             onShowPlanUpgrade={handleShowPlanUpgrade}
-            currentSubscription={profileData.subscription}
+            // currentSubscription={profileData.subscription}
             showPlanUpgrade={showPlanUpgrade}
-            onPlanUpgradeComplete={handlePlanUpgradeComplete}
+            // onPlanUpgradeComplete={handlePlanUpgradeComplete}
             onPlanUpgradeBack={handlePlanUpgradeBack}
         />
     );

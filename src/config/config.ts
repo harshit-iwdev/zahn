@@ -29,3 +29,7 @@ export const isProduction = env.IS_PRODUCTION;
 
 // Legacy support (keeping for backward compatibility)
 export const stripeKey = env.S3_ACCESS_KEY_ID; // Update this when you add Stripe support
+
+// Encryption key
+export const encryptionKey = env.ENCRYPTION_KEY;
+export const aad_context = env.AAD_CONTEXT;

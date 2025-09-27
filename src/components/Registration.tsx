@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { USER_ENDPOINT } from "@/utils/ApiConstants";
+import { DENTIST_ENDPOINT } from "@/utils/ApiConstants";
 import { executor } from "@/http/executer/index";
 import { ROUTES } from "@/routes/index";
 import { useNavigate } from "react-router-dom";
@@ -97,7 +97,7 @@ export function Registration({ onRegister, onShowLogin }: RegistrationProps) {
 
     try {
       // calling register API
-      const url = USER_ENDPOINT.REGISTER;
+      const url = DENTIST_ENDPOINT.REGISTER;
       const exe = executor("post", url);
       registerRef.current = exe;
       const response = await registerRef.current.execute(formData);
